@@ -1,0 +1,108 @@
+{
+  "content": {
+    "name": "tagger",
+    "human_name": "Tagger",
+    "description": "Metadata tagging node.",
+    "executable": "tagger",
+    "input_type": "tif",
+    "output_type": "tif",
+    "config_entries": [
+      {
+        "name": "serial",
+        "human_name": "Serial",
+        "description": "Camera serial number",
+        "type": 3,
+        "choices": [
+          "15110092",
+          "17060646",
+          "17040523",
+          "17040521",
+          "15020320",
+          "15100300",
+          "15110091",
+          "14120588",
+          "14120451",
+          "17070803",
+          "18020390"
+        ],
+        "required": true
+      },
+      {
+        "name": "resolution",
+        "human_name": "Resolution",
+        "description": "Camera resolution",
+        "type": 5,
+        "linked": 0,
+        "choices": [
+          "4240x2832",
+          "4240x2832",
+          "4240x2832",
+          "4240x2832",
+          "4240x2832",
+          "4240x2832",
+          "4240x2832",
+          "3376x2704",
+          "3376x2704",
+          "4240x2832",
+          "4240x2832"
+        ],
+        "required": false
+      },
+      {
+        "name": "spectrum",
+        "human_name": "Type",
+        "description": "Type of this camera",
+        "type": 5,
+        "linked": 0,
+        "choices": [
+          "RGB",
+          "RGB",
+          "RGB",
+          "Mono",
+          "Mono",
+          "RGB",
+          "Mono",
+          "RGB",
+          "Mono",
+          "Mono",
+          "RGB"
+        ],
+        "required": false
+      },
+      {
+        "name": "filter",
+        "human_name": "Optical filter",
+        "description": "Optical filter",
+        "type": 3,
+        "choices": [
+          "filter 1",
+          "filter 2"
+        ],
+        "required": true
+      },
+      {
+        "name": "neutral_density",
+        "human_name": "Camera neutral density",
+        "description": "Neutral density",
+        "type": 3,
+        "choices": [
+          "dense",
+          "not dense"
+        ],
+        "required": true
+      },
+      {
+        "name": "exposure",
+        "human_name": "Exposure",
+        "description": "Exposure",
+        "type": 1,
+        "min_limit": 0,
+        "max_limit": 10,
+        "choices": null,
+        "required": true
+      }
+    ],
+    "errors": []
+  },
+  "type": "NodeDefinition"
+}
