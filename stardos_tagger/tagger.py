@@ -16,8 +16,8 @@ class Tagger(Node):
 	input_topic: str
 	time_offset: int
 
-	attitude_queue: deque<Attitude>
-	gps_queue: deque<GPSPosition>
+	attitude_queue: deque
+	gps_queue: deque
 	
 	def __init__(self):
 		super().__init__('tagger')
@@ -27,18 +27,18 @@ class Tagger(Node):
 
 		self.get_logger().info('initializing tagger')
 
-		if (len(sys.argv) > 1):
-			self.get_logger().info(f'loading config...')
-			args = json.loads(sys.argv[1])
+		#if (len(sys.argv) > 1):
+			#self.get_logger().info(f'loading config...')
+			#args = json.loads(sys.argv[1])
 
-			self.config = args.get('config')
-			self.input_topic = args.get('input_topic')
-		else:
-			self.get_logger().error(f'failure receiving config')
-			sys.exit(126)
+			#self.config = args.get('config')
+			#self.input_topic = args.get('input_topic')
+		#else:
+			#self.get_logger().error(f'failure receiving config')
+			#sys.exit(126)
 
 		
-	def create_pubsub(nspace: str):
+	def create_pubsub(self, nspace: str):
 
 		self.nspace = nspace
 
@@ -57,7 +57,7 @@ class Tagger(Node):
 			tag_image,
 			10)
 
-		self.get_logger().info(f'subscribing to {}')
+		self.get_logger().info(f'subscribing to attitude')
 
 		self.attitude_sub = self.createSubscription(
 			Attitude,
@@ -65,7 +65,7 @@ class Tagger(Node):
 			enqueue_attitude,
 			10)
 
-		self.get_logger().info(f'subscribing to {self.input_topic}')
+		self.get_logger().info(f'subscribing to gpsposition')
 
 		self.gps_sub = self.createSubscription(
 			GPSPosition,
@@ -139,7 +139,7 @@ class Tagger(Node):
 		self.get_logger().info('setting time offset')
 		self.time_offset = (msg.time_unix_us / 1000) - msg.time_boot_ms
 		self.get_logger().info('removing system_time subscriber')
-		if !self.destroy_subscription(self.time_sub):
+		if not self.destroy_subscription(self.time_sub):
 			self.get_logger().error('failure to destroy time offset subscription')
 
 	# these utility functions from stack overflow: 
@@ -205,10 +205,8 @@ class Tagger(Node):
 
 		self.output_pub.publish(msg)
 
-
-if __name__ == '__main__':
-
-	pyexiv2.xmp.register_namespace('http://micasense.com/DLS/1.0','DLS')
+def main():
+	pyexiv2.xmp.register_namespace('http://micasense.com/DLS/1.0/','DLS')
 	
 	rclpy.init()
 
@@ -220,4 +218,9 @@ if __name__ == '__main__':
 
 	tagger.destroy_node()
 	rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()
+
 
