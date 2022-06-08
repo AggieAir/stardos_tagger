@@ -1,19 +1,29 @@
 import rclpy
 from rclpy.node import Node
-from stardos_interfaces.msg import SensorData, Attitude, GPSPosition
+from stardos_interfaces.msg import SensorData, Attitude, GPSPosition, SystemTime
+
+from datetime import datetime
+from collections import deque
 import sys
 import json
 import time
-import exiv2
+import pyexiv2
 
 class Tagger(Node):
 
 	output_path: str
 	config: str
-	input: str
+	input_topic: str
+	time_offset: int
+
+	attitude_queue: deque<Attitude>
+	gps_queue: deque<GPSPosition>
 	
 	def __init__(self):
 		super().__init__('tagger')
+
+		self.attitude_queue = deque()
+		self.gps_queue = deque()
 
 		self.get_logger().info('initializing tagger')
 
@@ -22,26 +32,187 @@ class Tagger(Node):
 			args = json.loads(sys.argv[1])
 
 			self.config = args.get('config')
-			self.input = args.get('input')
+			self.input_topic = args.get('input_topic')
 		else:
 			self.get_logger().error(f'failure receiving config')
 			sys.exit(126)
 
+		
+	def create_pubsub(nspace: str):
 
-		self.get_logger().info(f'subscribing to {self.input}')
+		self.nspace = nspace
 
-		self.subscription = self.createSubscription(
+		self.get_logger().info(f'setting up publisher on {self.output_topic}')
+
+		self.output_pub = self.create_publisher(
 			SensorData,
-			self.input,
+			self.output_topic,
 			10)
 
+		self.get_logger().info(f'subscribing to {self.input_topic}')
+
+		self.input_sub = self.createSubscription(
+			SensorData,
+			self.input_topic,
+			tag_image,
+			10)
+
+		self.get_logger().info(f'subscribing to {}')
+
+		self.attitude_sub = self.createSubscription(
+			Attitude,
+			self.nspace + 'attitude',
+			enqueue_attitude,
+			10)
+
+		self.get_logger().info(f'subscribing to {self.input_topic}')
+
+		self.gps_sub = self.createSubscription(
+			GPSPosition,
+			self.nspace + 'gps_position',
+			enqueue_gps,
+			10)
+
+		self.time_sub = self.createSubscription(
+			SystemTime,
+			self.nspace + 'system_time',
+			get_time_offset,
+			1)
+
+
+	
+	# subscriber method
+	def enqueue_attitude(self, msg: Attitude):
+		self.attitude_queue.append(msg)
+
+		
+	def get_attitude(self, timestamp: int) -> Attitude:
+		delta = float('inf')
+		msg = None
+		
+		while self.gps_queue: 
+			next_msg = self.gps_queue.popLeft()
+
+			next_delta = abs((next_msg.time_boot_ms + self.time_offset) - timestamp)
+
+			if (next_delta > delta):
+				self.attitude_queue.appendLeft(next_msg)
+				return msg
+			
+			msg = next_msg
+			delta = next_delta
+
+		# TODO: loop fell through, handle potential error
+		if msg == None: 
+			self.get_logger().error('attitude queue fell through')
+
+		return msg
+
+
+	def enqueue_gps(self, msg: GPSPosition):
+		self.gps_queue.append(msg)
+
+
+	def get_gps(self, timestamp: int) -> GPSPosition:
+		delta = float('inf')
+		msg = None
+		
+		while self.gps_queue: 
+			next_msg = self.gps_queue.popLeft()
+
+			next_delta = abs(((next_msg.time_usec / 1000) + self.time_offset) - timestamp)
+
+			if (next_delta > delta):
+				self.gps_queue.appendLeft(next_msg)
+				return msg
+			
+			msg = next_msg
+			delta = next_delta
+
+		# TODO: loop fell through, handle potential error
+		if msg == None: 
+			self.get_logger().error('gps queue fell through')
+
+		return msg
+
+	def get_time_offset(self, msg: SystemTime):
+		self.get_logger().info('setting time offset')
+		self.time_offset = (msg.time_unix_us / 1000) - msg.time_boot_ms
+		self.get_logger().info('removing system_time subscriber')
+		if !self.destroy_subscription(self.time_sub):
+			self.get_logger().error('failure to destroy time offset subscription')
+
+	# these utility functions from stack overflow: 
+	# https://stackoverflow.com/questions/10799366/geotagging-jpegs-with-pyexiv2
+	def dms_to_decimal(degrees, minutes, seconds, sign=' '):
+		# Convert degrees, minutes, seconds into decimal degrees.
+    #
+		# >>> dms_to_decimal(10, 10, 10)
+		# 10.169444444444444
+		# >>> dms_to_decimal(8, 9, 10, 'S')
+		# -8.152777777777779
+
+		return (-1 if sign[0] in 'SWsw' else 1) * (
+			float(degrees)        +
+			float(minutes) / 60   +
+			float(seconds) / 3600)
+
+
+	def decimal_to_dms(decimal):
+		# Convert decimal degrees into degrees, minutes, seconds.
+		#
+		# >>> decimal_to_dms(50.445891)
+		# [Fraction(50, 1), Fraction(26, 1), Fraction(113019, 2500)]
+		# >>> decimal_to_dms(-125.976893)
+		# [Fraction(125, 1), Fraction(58, 1), Fraction(92037, 2500)]
+
+		remainder, degrees = math.modf(abs(decimal))
+		remainder, minutes = math.modf(remainder * 60)
+		return [Fraction(n) for n in (degrees, minutes, remainder * 60)]
+
+	def tag_image(self, msg: SensorData):
+		metadata = pyexiv2.ImageMetadata(msg.content[0])
+		metadata.read()
+
+		metadata['Exif.Image.NewSubfileType'] = 0
+		metadata['Exif.Image.Make'] = 'makename'
+		metadata['Exif.Image.Model'] = 'modelname'
+		metadata['Exif.Image.Orientation'] = 1
+		metadata['Exif.Image.Software'] = 'STARDOS'
+		metadata['Exif.Photo.ExifVersion'] = '2.30'
+
+		metadata['Exif.Image.DateTime'] = datetime.fromtimestamp(msg.collected_at).strftime('%Y:%m:%d %H:%M:%S')
+		# TODO: add additional image metadata & config parsing details
+
+		# TODO: finish programmatic ref determination
+		gps_msg = self.get_gps(msg.collected_at)
+		metadata['Exif.GPSInfo.GPSVersionID'] = '2 2 0 0'
+		metadata['Exif.GPSInfo.GPSLatitudeRef'] = 'North'
+		metadata['Exif.GPSInfo.GPSLatitude'] = self.decimal_to_dms(gps_msg.lat)
+		metadata['Exif.GPSInfo.GPSLongitudeRef'] = 'West'
+		metadata['Exif.GPSInfo.GPSLongitude'] = self.decimal_to_dms(gps_msg.lon)
+		metadata['Exif.GPSInfo.GPSAltitudeRef'] = '0'
+		metadata['Exif.GPSInfo.GPSAltitude'] = Fraction(gps_msg.alt,1)
+		# figure out how to get this later
+		# metadata['Exif.GPSInfo.GPSDOP'] = Fraction(0,4294967295)
+		
+		attitude_msg = self.get_attitude(msg.collected_at)
+		metadata['Xmp.DLS.Roll'] = attitude_msg.roll
+		metadata['Xmp.DLS.Pitch'] = attitude_msg.pitch
+		metadata['Xmp.DLS.Yaw'] = attitude_msg.yaw
+
+		self.output_pub.publish(msg)
 
 
 if __name__ == '__main__':
+
+	pyexiv2.xmp.register_namespace('http://micasense.com/DLS/1.0','DLS')
 	
 	rclpy.init()
 
 	tagger = Tagger()
+	nspace = tagger.get_namespace()
+	tagger.create_pubsub(nspace)
 
 	rclpy.spin(tagger)
 
