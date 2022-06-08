@@ -201,6 +201,8 @@ class Tagger(Node):
 		metadata['Xmp.DLS.Pitch'] = attitude_msg.pitch
 		metadata['Xmp.DLS.Yaw'] = attitude_msg.yaw
 
+		metadata.write()
+
 		self.output_pub.publish(msg)
 
 
