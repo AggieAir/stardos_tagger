@@ -97,7 +97,7 @@ class Tagger(Node):
 		delta = float('inf')
 		msg = None
 		
-		while self.gps_queue: 
+		while self.attitude_queue: 
 			next_msg = self.gps_queue.popleft()
 
 			next_delta = abs((next_msg.time_boot_ms + self.time_offset) - timestamp)
@@ -127,7 +127,7 @@ class Tagger(Node):
 		while self.gps_queue: 
 			next_msg = self.gps_queue.popleft()
 
-			next_delta = abs(((next_msg.time_usec / 1000) + self.time_offset) - timestamp)
+			next_delta = abs((next_msg.time_usec / 1000) - timestamp)
 
 			if (next_delta > delta):
 				self.gps_queue.appendleft(next_msg)
