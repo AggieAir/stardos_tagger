@@ -186,7 +186,7 @@ class Tagger(Node):
 		metadata['Exif.Image.Software'] = 'STARDOS'
 		metadata['Exif.Photo.ExifVersion'] = '2.30'
 
-		metadata['Exif.Image.DateTime'] = datetime.fromtimestamp(msg.collected_at).strftime('%Y:%m:%d %H:%M:%S')
+		metadata['Exif.Image.DateTime'] = datetime.fromtimestamp(msg.collected_at / 1000).strftime('%Y:%m:%d %H:%M:%S')
 		# TODO: add additional image metadata & config parsing details
 
 		# TODO: finish programmatic ref determination
