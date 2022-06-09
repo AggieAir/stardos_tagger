@@ -90,7 +90,7 @@ class Tagger(Node):
 	
 	# subscriber method
 	def enqueue_attitude(self, msg: Attitude):
-		self.get_logger().info(f'appending to attitude_queue')
+		# self.get_logger().info(f'appending to attitude_queue')
 		self.attitude_queue.append(msg)
 
 		
@@ -118,7 +118,7 @@ class Tagger(Node):
 
 
 	def enqueue_gps(self, msg: GPSPosition):
-		self.get_logger().info(f'appending to gps_queue')
+		# self.get_logger().info(f'appending to gps_queue')
 		self.gps_queue.append(msg)
 
 
@@ -174,7 +174,7 @@ class Tagger(Node):
 		# [Fraction(50, 1), Fraction(26, 1), Fraction(113019, 2500)]
 		# >>> decimal_to_dms(-125.976893)
 		# [Fraction(125, 1), Fraction(58, 1), Fraction(92037, 2500)]
-
+		decimal = decimal / 1000000
 		remainder, degrees = math.modf(abs(decimal))
 		remainder, minutes = math.modf(remainder * 60)
 		return [Fraction(n) for n in (degrees, minutes, remainder * 60)]
@@ -201,7 +201,7 @@ class Tagger(Node):
 		metadata['Exif.GPSInfo.GPSLongitudeRef'] = 'West'
 		metadata['Exif.GPSInfo.GPSLongitude'] = self.decimal_to_dms(gps_msg.lon)
 		metadata['Exif.GPSInfo.GPSAltitudeRef'] = '0'
-		metadata['Exif.GPSInfo.GPSAltitude'] = Fraction(gps_msg.alt,1)
+		metadata['Exif.GPSInfo.GPSAltitude'] = Fraction(gps_msg.alt,1000)
 		# figure out how to get this later
 		# metadata['Exif.GPSInfo.GPSDOP'] = Fraction(0,4294967295)
 		
