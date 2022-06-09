@@ -64,7 +64,7 @@ class Tagger(Node):
 			self.tag_image,
 			10)
 
-		self.get_logger().info(f'subscribing to attitude')
+		self.get_logger().info(f'subscribing to {self.aircraft_path}/attitude')
 
 		self.attitude_sub = self.create_subscription(
 			Attitude,
@@ -72,7 +72,7 @@ class Tagger(Node):
 			self.enqueue_attitude,
 			10)
 
-		self.get_logger().info(f'subscribing to gpsposition')
+		self.get_logger().info(f'subscribing to {self.aircraft_path}/gps_position')
 
 		self.gps_sub = self.create_subscription(
 			GPSPosition,
@@ -90,6 +90,7 @@ class Tagger(Node):
 	
 	# subscriber method
 	def enqueue_attitude(self, msg: Attitude):
+		self.get_logger().info(f'appending to attitude_queue')
 		self.attitude_queue.append(msg)
 
 		
@@ -117,6 +118,7 @@ class Tagger(Node):
 
 
 	def enqueue_gps(self, msg: GPSPosition):
+		self.get_logger().info(f'appending to gps_queue')
 		self.gps_queue.append(msg)
 
 
@@ -127,7 +129,7 @@ class Tagger(Node):
 		while self.gps_queue: 
 			next_msg = self.gps_queue.popleft()
 
-			next_delta = abs((next_msg.time_usec / 1000) - timestamp)
+			next_delta = abs(((next_msg.time_usec / 1000) + self.time_offset) - timestamp)
 
 			if (next_delta > delta):
 				self.gps_queue.appendleft(next_msg)
