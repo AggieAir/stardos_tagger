@@ -8,6 +8,7 @@ import sys
 import json
 import time
 import pyexiv2
+import math
 
 class Tagger(Node):
 
