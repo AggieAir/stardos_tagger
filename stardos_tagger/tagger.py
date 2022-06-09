@@ -4,6 +4,7 @@ from stardos_interfaces.msg import SensorData, Attitude, GPSPosition, SystemTime
 
 from datetime import datetime
 from collections import deque
+from fractions import Fraction
 import sys
 import json
 import time
