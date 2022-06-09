@@ -149,7 +149,7 @@ class Tagger(Node):
 
 	# these utility functions from stack overflow: 
 	# https://stackoverflow.com/questions/10799366/geotagging-jpegs-with-pyexiv2
-	def dms_to_decimal(degrees, minutes, seconds, sign=' '):
+	def dms_to_decimal(self, degrees, minutes, seconds, sign=' '):
 		# Convert degrees, minutes, seconds into decimal degrees.
     #
 		# >>> dms_to_decimal(10, 10, 10)
@@ -163,7 +163,7 @@ class Tagger(Node):
 			float(seconds) / 3600)
 
 
-	def decimal_to_dms(decimal):
+	def decimal_to_dms(self, decimal):
 		# Convert decimal degrees into degrees, minutes, seconds.
 		#
 		# >>> decimal_to_dms(50.445891)
