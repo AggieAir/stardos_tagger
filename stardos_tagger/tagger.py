@@ -177,7 +177,7 @@ class Tagger(Node):
 		decimal = decimal / 10000000
 		remainder, degrees = math.modf(abs(decimal))
 		remainder, minutes = math.modf(remainder * 60)
-		return [Fraction(n) for n in (degrees, minutes, remainder * 60)]
+		return [Fraction(n).limit_denominator(10000) for n in (degrees, minutes, remainder * 60)]
 
 	def tag_image(self, msg: SensorData):
 		metadata = pyexiv2.ImageMetadata(msg.content[0])
