@@ -11,9 +11,9 @@ import pyexiv2
 
 class Tagger(Node):
 
-	output_path: str
+	output_topic = '/tagged'
+	input_topic = '/data'
 	config: str
-	input_topic: str
 	time_offset: int
 
 	attitude_queue: deque
@@ -27,6 +27,7 @@ class Tagger(Node):
 
 		self.get_logger().info('initializing tagger')
 
+		# TODO: add propoer config parsing w/ starcommand
 		#if (len(sys.argv) > 1):
 			#self.get_logger().info(f'loading config...')
 			#args = json.loads(sys.argv[1])
@@ -42,18 +43,20 @@ class Tagger(Node):
 
 		self.nspace = nspace
 
-		self.get_logger().info(f'setting up publisher on {self.output_topic}')
+		self.get_logger().info(f'{self.nspace = }')
+
+		self.get_logger().info(f'setting up publisher on {self.nspace}{self.output_topic}')
 
 		self.output_pub = self.create_publisher(
 			SensorData,
-			self.output_topic,
+			self.nspace + self.output_topic,
 			10)
 
-		self.get_logger().info(f'subscribing to {self.input_topic}')
+		self.get_logger().info(f'subscribing to {self.nspace}{self.input_topic}')
 
 		self.input_sub = self.createSubscription(
 			SensorData,
-			self.input_topic,
+			self.nspace + self.input_topic,
 			tag_image,
 			10)
 
