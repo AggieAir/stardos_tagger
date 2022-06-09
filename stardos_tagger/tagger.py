@@ -96,12 +96,12 @@ class Tagger(Node):
 		msg = None
 		
 		while self.gps_queue: 
-			next_msg = self.gps_queue.popLeft()
+			next_msg = self.gps_queue.popleft()
 
 			next_delta = abs((next_msg.time_boot_ms + self.time_offset) - timestamp)
 
 			if (next_delta > delta):
-				self.attitude_queue.appendLeft(next_msg)
+				self.attitude_queue.appendleft(next_msg)
 				return msg
 			
 			msg = next_msg
@@ -123,12 +123,12 @@ class Tagger(Node):
 		msg = None
 		
 		while self.gps_queue: 
-			next_msg = self.gps_queue.popLeft()
+			next_msg = self.gps_queue.popleft()
 
 			next_delta = abs(((next_msg.time_usec / 1000) + self.time_offset) - timestamp)
 
 			if (next_delta > delta):
-				self.gps_queue.appendLeft(next_msg)
+				self.gps_queue.appendleft(next_msg)
 				return msg
 			
 			msg = next_msg
