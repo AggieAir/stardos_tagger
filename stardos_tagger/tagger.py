@@ -141,8 +141,8 @@ class Tagger(Node):
 		return msg
 
 	def get_time_offset(self, msg: SystemTime):
-		self.get_logger().info('setting time offset')
 		self.time_offset = (msg.time_unix_us / 1000) - msg.time_boot_ms
+		self.get_logger().info(f'setting time offset {self.time_offset}')
 		self.get_logger().info('removing system_time subscriber')
 		if not self.destroy_subscription(self.time_sub):
 			self.get_logger().error('failure to destroy time offset subscription')
