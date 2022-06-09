@@ -42,6 +42,8 @@ class Tagger(Node):
 	def create_pubsub(self, nspace: str):
 
 		self.nspace = nspace
+        
+		self.aircraft_path = '/'.join(list(self.nspace.split('/')[0:3]))
 
 		self.get_logger().info(f'{self.nspace = }')
 
@@ -57,29 +59,29 @@ class Tagger(Node):
 		self.input_sub = self.create_subscription(
 			SensorData,
 			self.nspace + self.input_topic,
-			tag_image,
+			self.tag_image,
 			10)
 
 		self.get_logger().info(f'subscribing to attitude')
 
 		self.attitude_sub = self.create_subscription(
 			Attitude,
-			self.nspace + 'attitude',
-			enqueue_attitude,
+			self.aircraft_path + '/attitude',
+			self.enqueue_attitude,
 			10)
 
 		self.get_logger().info(f'subscribing to gpsposition')
 
 		self.gps_sub = self.create_subscription(
 			GPSPosition,
-			self.nspace + 'gps_position',
-			enqueue_gps,
+			self.aircraft_path + '/gps_position',
+			self.enqueue_gps,
 			10)
 
 		self.time_sub = self.create_subscription(
 			SystemTime,
-			self.nspace + 'system_time',
-			get_time_offset,
+			self.aircraft_path + '/system_time',
+			self.get_time_offset,
 			1)
 
 
