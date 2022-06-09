@@ -43,7 +43,7 @@ class Tagger(Node):
 
 		self.nspace = nspace
         
-		self.aircraft_path = '/'.join(list(self.nspace.split('/')[0:3]))
+		self.aircraft_path = '/'.join(list(self.nspace.split('/')[0:2]))
 
 		self.get_logger().info(f'{self.nspace = }')
 
