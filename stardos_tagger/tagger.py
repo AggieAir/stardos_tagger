@@ -54,7 +54,7 @@ class Tagger(Node):
 
 		self.get_logger().info(f'subscribing to {self.nspace}{self.input_topic}')
 
-		self.input_sub = self.createSubscription(
+		self.input_sub = self.create_subscription(
 			SensorData,
 			self.nspace + self.input_topic,
 			tag_image,
@@ -62,7 +62,7 @@ class Tagger(Node):
 
 		self.get_logger().info(f'subscribing to attitude')
 
-		self.attitude_sub = self.createSubscription(
+		self.attitude_sub = self.create_subscription(
 			Attitude,
 			self.nspace + 'attitude',
 			enqueue_attitude,
@@ -70,13 +70,13 @@ class Tagger(Node):
 
 		self.get_logger().info(f'subscribing to gpsposition')
 
-		self.gps_sub = self.createSubscription(
+		self.gps_sub = self.create_subscription(
 			GPSPosition,
 			self.nspace + 'gps_position',
 			enqueue_gps,
 			10)
 
-		self.time_sub = self.createSubscription(
+		self.time_sub = self.create_subscription(
 			SystemTime,
 			self.nspace + 'system_time',
 			get_time_offset,
