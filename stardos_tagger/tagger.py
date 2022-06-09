@@ -174,7 +174,7 @@ class Tagger(Node):
 		# [Fraction(50, 1), Fraction(26, 1), Fraction(113019, 2500)]
 		# >>> decimal_to_dms(-125.976893)
 		# [Fraction(125, 1), Fraction(58, 1), Fraction(92037, 2500)]
-		decimal = decimal / 1000000
+		decimal = decimal / 10000000
 		remainder, degrees = math.modf(abs(decimal))
 		remainder, minutes = math.modf(remainder * 60)
 		return [Fraction(n) for n in (degrees, minutes, remainder * 60)]
