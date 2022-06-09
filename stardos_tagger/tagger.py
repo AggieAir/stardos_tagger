@@ -99,7 +99,7 @@ class Tagger(Node):
 		msg = None
 		
 		while self.attitude_queue: 
-			next_msg = self.gps_queue.popleft()
+			next_msg = self.attitude_queue.popleft()
 
 			next_delta = abs((next_msg.time_boot_ms + self.time_offset) - timestamp)
 
