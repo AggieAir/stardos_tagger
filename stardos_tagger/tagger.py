@@ -187,7 +187,7 @@ class Tagger(Node):
 		metadata['Exif.Image.Make'] = 'makename'
 		metadata['Exif.Image.Model'] = 'modelname'
 		metadata['Exif.Image.Orientation'] = 1
-		metadata['Exif.Image.Software'] = 'STARDOS'
+		metadata['Exif.Image.Software'] = 'USU AggieAir STARDOS'
 		metadata['Exif.Photo.ExifVersion'] = '2.30'
 
 		metadata['Exif.Image.DateTime'] = datetime.fromtimestamp(msg.collected_at / 1000).strftime('%Y:%m:%d %H:%M:%S')
