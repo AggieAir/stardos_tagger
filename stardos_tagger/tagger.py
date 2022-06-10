@@ -183,6 +183,8 @@ class Tagger(Node):
 		return [Fraction(n).limit_denominator(10000) for n in (degrees, minutes, remainder * 60)]
 
 	def tag_image(self, msg: SensorData):
+		self.get_logger().info(f'tagging image {msg.content[0]}')
+
 		metadata = pyexiv2.ImageMetadata(msg.content[0])
 		metadata.read()
 
