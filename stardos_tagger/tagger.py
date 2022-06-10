@@ -122,7 +122,7 @@ class Tagger(Node):
 
 
 	def enqueue_gps(self, msg: GPSPosition):
-		# self.get_logger().info(f'appending to gps_queue')
+		self.get_logger().info(f'appending to gps_queue')
 		self.gps_queue.append(msg)
 
 
