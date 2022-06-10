@@ -17,10 +17,12 @@ class Tagger(Node):
 	input_topic = '/data'
 	config: str
 	time_offset: int
+
+	# cached metadata messages in case sensor rate is slower than capture rate
 	gps_msg: GPSPosition = None
 	attitude_msg: Attitude = None
 
-	# cached metadata messages in case sensor rate is slower than capture rate
+	# queue of stored messages from the future
 	attitude_queue: deque
 	gps_queue: deque
 	
@@ -99,7 +101,6 @@ class Tagger(Node):
 		
 	def get_attitude(self, timestamp: int) -> Attitude:
 		delta = float('inf')
-		self.attitude_msg = None
 		
 		while self.attitude_queue: 
 			next_msg = self.attitude_queue.popleft()
@@ -127,7 +128,6 @@ class Tagger(Node):
 
 	def get_gps(self, timestamp: int) -> GPSPosition:
 		delta = float('inf')
-		self.gps_msg = None
 		
 		while self.gps_queue: 
 			next_msg = self.gps_queue.popleft()
