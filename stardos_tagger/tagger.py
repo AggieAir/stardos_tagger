@@ -17,7 +17,10 @@ class Tagger(Node):
 	input_topic = '/data'
 	config: str
 	time_offset: int
+	gps_msg: GPSPosition = None
+	attitude_msg: Attitude = None
 
+	# cached metadata messages in case sensor rate is slower than capture rate
 	attitude_queue: deque
 	gps_queue: deque
 	
@@ -54,7 +57,7 @@ class Tagger(Node):
 		self.output_pub = self.create_publisher(
 			SensorData,
 			self.nspace + self.output_topic,
-			10)
+			100)
 
 		self.get_logger().info(f'subscribing to {self.nspace}{self.input_topic}')
 
@@ -62,7 +65,7 @@ class Tagger(Node):
 			SensorData,
 			self.nspace + self.input_topic,
 			self.tag_image,
-			10)
+			100)
 
 		self.get_logger().info(f'subscribing to {self.aircraft_path}/attitude')
 
@@ -70,7 +73,7 @@ class Tagger(Node):
 			Attitude,
 			self.aircraft_path + '/attitude',
 			self.enqueue_attitude,
-			10)
+			100)
 
 		self.get_logger().info(f'subscribing to {self.aircraft_path}/gps_position')
 
@@ -78,7 +81,7 @@ class Tagger(Node):
 			GPSPosition,
 			self.aircraft_path + '/gps_position',
 			self.enqueue_gps,
-			10)
+			100)
 
 		self.time_sub = self.create_subscription(
 			SystemTime,
@@ -96,7 +99,7 @@ class Tagger(Node):
 		
 	def get_attitude(self, timestamp: int) -> Attitude:
 		delta = float('inf')
-		msg = None
+		self.attitude_msg = None
 		
 		while self.attitude_queue: 
 			next_msg = self.attitude_queue.popleft()
@@ -105,16 +108,16 @@ class Tagger(Node):
 
 			if (next_delta > delta):
 				self.attitude_queue.appendleft(next_msg)
-				return msg
+				return self.attitude_msg
 			
-			msg = next_msg
+			self.attitude_msg = next_msg
 			delta = next_delta
 
 		# TODO: loop fell through, handle potential error
-		if msg == None: 
+		if self.attitude_msg == None: 
 			self.get_logger().error('attitude queue fell through')
 
-		return msg
+		return self.attitude_msg
 
 
 	def enqueue_gps(self, msg: GPSPosition):
@@ -124,7 +127,7 @@ class Tagger(Node):
 
 	def get_gps(self, timestamp: int) -> GPSPosition:
 		delta = float('inf')
-		msg = None
+		self.gps_msg = None
 		
 		while self.gps_queue: 
 			next_msg = self.gps_queue.popleft()
@@ -133,16 +136,16 @@ class Tagger(Node):
 
 			if (next_delta > delta):
 				self.gps_queue.appendleft(next_msg)
-				return msg
+				return self.gps_msg
 			
-			msg = next_msg
+			self.gps_msg = next_msg
 			delta = next_delta
 
 		# TODO: loop fell through, handle potential error
-		if msg == None: 
+		if self.gps_msg == None: 
 			self.get_logger().error('gps queue fell through')
 
-		return msg
+		return self.gps_msg
 
 	def get_time_offset(self, msg: SystemTime):
 		self.time_offset = (msg.time_unix_us / 1000) - msg.time_boot_ms
