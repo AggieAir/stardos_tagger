@@ -195,7 +195,9 @@ class Tagger(Node):
 		metadata['Exif.Image.Software'] = 'USU AggieAir STARDOS'
 		metadata['Exif.Photo.ExifVersion'] = '2.30'
 
+		# TODO: perhaps set Exif.Photo.SubSecTime based off of time remainder here?
 		metadata['Exif.Image.DateTime'] = datetime.fromtimestamp(msg.collected_at / 1000).strftime('%Y:%m:%d %H:%M:%S')
+
 		# TODO: add additional image metadata & config parsing details
 
 		# TODO: finish programmatic ref determination

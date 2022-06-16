@@ -1,0 +1,96 @@
+{
+  "content": {
+    "name": "tagger-partial",
+    "human_name": "Tagger-partial",
+    "description": "Tag images with EXIF metadata",
+    "executable": "tagger.py",
+    "input_type": "any",
+    "output_type": "any",
+    "config_entries": [
+			{
+				"name": "Exif.Image.Make",
+				"human_name": "Make",
+				"description": "Camera manufacturer",
+				"type": 2,
+				"choices": null,
+				"required": true
+			},
+			{
+				"name": "Exif.Image.Model",
+				"human_name": "Model",
+				"description": "Camera model",
+				"type": 2,
+				"choices": null,
+				"required": true
+			},
+			{
+				"name": "Exif.Photo.ExposureTime",
+				"human_name": "Exposure Time",
+				"description": "Camera exposure time in seconds",
+				"type": 2,
+				"choices": null,
+				"required": false
+			},
+			{
+				"name": "Exif.Photo.FNumber",
+				"human_name": "F-Number",
+				"description": "Ratio of focal length to aperture diameter",
+				"type": 1,
+				"choices": null,
+				"required": false
+			},
+			{
+				"name": "Exif.Photo.ExposureProgram",
+				"human_name": "Exposure Program",
+				"description": "Does the camera follow a program to set exposure on the fly?",
+				"type": 3,
+				"choices": [
+					"undefined",
+					"manual",
+					"auto",
+					"aperture priority",
+					"shutter priority",
+					"creative (biased towards depth of field)",
+					"action (biased towards shutter speed)",
+					"portrait",
+					"landscape"
+				],
+				"required": false
+			},
+			{
+				"name": "Exif.Photo.ISOSpeed",
+				"human_name": "ISO Speed",
+				"description": "Light sensitivity of camera sensor",
+				"type": 0,
+				"choices": null,
+				"required": false
+			},
+			{
+				"name": "Exif.Photo.MeteringMode",
+				"human_name": "Metering Mode",
+				"description": "Camera metering mode",
+				"type": 3,
+				"choices": [
+					"unknown",
+					"average",
+					"center-weighted average",
+					"spot",
+					"multispot",
+					"pattern",
+					"partial"
+				],
+				"required": false
+			},
+			{
+				"name": "Exif.Photo.FocalLength",
+				"human_name": "Focal Length",
+				"description": "Focal length of camera lens",
+				"type": 1,
+				"choices": null,
+				"required": false
+			}
+    ],
+    "errors": []
+  },
+  "type": "node_definition"
+}
