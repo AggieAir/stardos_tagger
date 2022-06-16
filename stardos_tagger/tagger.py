@@ -13,10 +13,25 @@ import math
 
 class Tagger(Node):
 
-	output_topic = '/tagged'
-	input_topic = '/data'
-	config: str
+	input_topic: str
+	output_topic = 'data'
+	gps_topic = '/gps_raw'
+	attitude_topic = '/attitude'
+	time_topic = '/system_time'
+
+	config: dict
+
 	time_offset: int
+
+	nspace: str
+	aircraft_nspace: str
+
+	output_pub: Publisher
+	input_sub: Subscriber
+	attitude_sub: Subscriber
+	gps_sub: Subscriber
+	time_sub: Subscriber
+
 
 	# cached metadata messages in case sensor rate is slower than capture rate
 	gps_msg: GPSPosition = None
@@ -26,6 +41,7 @@ class Tagger(Node):
 	attitude_queue: deque
 	gps_queue: deque
 	
+
 	def __init__(self):
 		super().__init__('tagger')
 
@@ -34,25 +50,23 @@ class Tagger(Node):
 
 		self.get_logger().info('initializing tagger')
 
-		# TODO: add propoer config parsing w/ starcommand
-		#if (len(sys.argv) > 1):
-			#self.get_logger().info(f'loading config...')
-			#args = json.loads(sys.argv[1])
+		TODO: add propoer config parsing w/ starcommand
+		if (len(sys.argv) > 1):
+			self.get_logger().info(f'loading config...')
+			args = json.loads(sys.argv[1])
 
-			#self.config = args.get('config')
-			#self.input_topic = args.get('input_topic')
-		#else:
-			#self.get_logger().error(f'failure receiving config')
-			#sys.exit(126)
+			self.config = args.get('config')
+			self.input_topic = args.get('input')
+		else:
+			self.get_logger().error(f'failure receiving config')
+			sys.exit(126)
 
-		
-	def create_pubsub(self, nspace: str):
-
-		self.nspace = nspace
+		self.nspace = tagger.get_namespace()
         
-		self.aircraft_path = '/'.join(list(self.nspace.split('/')[0:2]))
+		self.aircraft_nspace = '/'.join(list(self.nspace.split('/')[0:2]))
 
-		self.get_logger().info(f'{self.nspace = }')
+		self.get_logger().debug(f'{self.nspace = }')
+		self.get_logger().debug(f'{self.aircraft_nspace = }')
 
 		self.get_logger().info(f'setting up publisher on {self.nspace}{self.output_topic}')
 
@@ -61,36 +75,37 @@ class Tagger(Node):
 			self.nspace + self.output_topic,
 			100)
 
-		self.get_logger().info(f'subscribing to {self.nspace}{self.input_topic}')
+		self.get_logger().info(f'subscribing to {self.input_topic}')
 
 		self.input_sub = self.create_subscription(
 			SensorData,
-			self.nspace + self.input_topic,
+			self.input_topic,
 			self.tag_image,
 			100)
 
-		self.get_logger().info(f'subscribing to {self.aircraft_path}/attitude')
+		self.get_logger().info(f'subscribing to {self.aircraft_nspace}{self.attitude_topic')
 
 		self.attitude_sub = self.create_subscription(
 			Attitude,
-			self.aircraft_path + '/attitude',
+			self.aircraft_nspace + self.attitude_topic,
 			self.enqueue_attitude,
 			100)
 
-		self.get_logger().info(f'subscribing to {self.aircraft_path}/gps_position')
+		self.get_logger().info(f'subscribing to {self.aircraft_nspace}{self.gps_topic}')
 
 		self.gps_sub = self.create_subscription(
 			GPSPosition,
-			self.aircraft_path + '/gps_position',
+			self.aircraft_nspace + self.gps_topic,
 			self.enqueue_gps,
 			100)
 
+		self.get_logger().info(f'subscribing to {self.aircraft_nspace}{self.time_topic}')
+
 		self.time_sub = self.create_subscription(
 			SystemTime,
-			self.aircraft_path + '/system_time',
+			self.aircraft_nspace + self.time_topic,
 			self.get_time_offset,
 			1)
-
 
 	
 	# subscriber method
@@ -99,6 +114,8 @@ class Tagger(Node):
 		self.attitude_queue.append(msg)
 
 		
+	# get next attitude message from stored queue
+	# previous message is stored in self.attitude_msg in case the queue runs dry
 	def get_attitude(self, timestamp: int) -> Attitude:
 		delta = float('inf')
 		
@@ -126,6 +143,8 @@ class Tagger(Node):
 		self.gps_queue.append(msg)
 
 
+	# get next gps message from stored queue
+	# previous message is stored in self.gps_msg in case the queue runs dry
 	def get_gps(self, timestamp: int) -> GPSPosition:
 		delta = float('inf')
 		
@@ -147,12 +166,14 @@ class Tagger(Node):
 
 		return self.gps_msg
 
+
 	def get_time_offset(self, msg: SystemTime):
 		self.time_offset = (msg.time_unix_us / 1000) - msg.time_boot_ms
 		self.get_logger().info(f'setting time offset {self.time_offset}')
 		self.get_logger().info('removing system_time subscriber')
 		if not self.destroy_subscription(self.time_sub):
 			self.get_logger().error('failure to destroy time offset subscription')
+
 
 	# these utility functions from stack overflow: 
 	# https://stackoverflow.com/questions/10799366/geotagging-jpegs-with-pyexiv2
@@ -182,6 +203,10 @@ class Tagger(Node):
 		remainder, minutes = math.modf(remainder * 60)
 		return [Fraction(n).limit_denominator(10000) for n in (degrees, minutes, remainder * 60)]
 
+
+	# main usage of this node: 
+	# * tag images with positional metadata we're subscribed to
+	# * tag images with camera parameters passed in via the config
 	def tag_image(self, msg: SensorData):
 		self.get_logger().info(f'tagging image {msg.content[0]}')
 
@@ -221,14 +246,12 @@ class Tagger(Node):
 
 		self.output_pub.publish(msg)
 
+
 def main():
 	pyexiv2.xmp.register_namespace('http://micasense.com/DLS/1.0/','DLS')
 	
 	rclpy.init()
-
 	tagger = Tagger()
-	nspace = tagger.get_namespace()
-	tagger.create_pubsub(nspace)
 
 	rclpy.spin(tagger)
 
