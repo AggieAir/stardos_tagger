@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from stardos_interfaces.msg import SensorData, Attitude, GPSPosition, SystemTime
+from stardos_interfaces.msg import SensorData, Attitude, GlobalPosition, SystemTime
 
 from datetime import datetime
 from collections import deque
@@ -15,7 +15,7 @@ class Tagger(Node):
 
 	input_topic: str
 	output_topic = 'data'
-	gps_topic = '/gps_raw'
+	gps_topic = '/global_position'
 	attitude_topic = '/attitude'
 	time_topic = '/system_time'
 
@@ -106,8 +106,31 @@ class Tagger(Node):
 			self.aircraft_nspace + self.time_topic,
 			self.get_time_offset,
 			1)
-
 	
+
+	# get next messasge from queue passed in
+	def get_msg(self, timestamp: int, msg, queue: deque):
+		delta = float('inf')
+		
+		# deque objects are falsy when empty
+		while queue: 
+
+			next_msg = queue.popleft()
+			next_delta = abs((next_msg.time_boot_ms + self.time_offset) - timestamp)
+
+			# if delta gets bigger, then current message is the closest
+			# make sure to put next back
+			if (next_delta > delta):
+				queue.appendleft(next_msg)
+				return msg
+			
+			msg = next_msg
+			delta = next_delta
+
+		# if the queue is empty, use the message we have
+		return msg
+
+
 	# subscriber method
 	def enqueue_attitude(self, msg: Attitude):
 		# self.get_logger().info(f'appending to attitude_queue')
@@ -117,19 +140,7 @@ class Tagger(Node):
 	# get next attitude message from stored queue
 	# previous message is stored in self.attitude_msg in case the queue runs dry
 	def get_attitude(self, timestamp: int) -> Attitude:
-		delta = float('inf')
-		
-		while self.attitude_queue: 
-			next_msg = self.attitude_queue.popleft()
-
-			next_delta = abs((next_msg.time_boot_ms + self.time_offset) - timestamp)
-
-			if (next_delta > delta):
-				self.attitude_queue.appendleft(next_msg)
-				return self.attitude_msg
-			
-			self.attitude_msg = next_msg
-			delta = next_delta
+		self.attitude_msg = self.get_msg(timestamp, self.attitude_msg, self.attitude_queue)
 
 		# TODO: loop fell through, handle potential error
 		if self.attitude_msg == None: 
@@ -138,6 +149,7 @@ class Tagger(Node):
 		return self.attitude_msg
 
 
+	# subscriber method
 	def enqueue_gps(self, msg: GPSPosition):
 		self.get_logger().info(f'appending to gps_queue')
 		self.gps_queue.append(msg)
@@ -146,19 +158,8 @@ class Tagger(Node):
 	# get next gps message from stored queue
 	# previous message is stored in self.gps_msg in case the queue runs dry
 	def get_gps(self, timestamp: int) -> GPSPosition:
-		delta = float('inf')
-		
-		while self.gps_queue: 
-			next_msg = self.gps_queue.popleft()
 
-			next_delta = abs(((next_msg.time_usec / 1000) + self.time_offset) - timestamp)
-
-			if (next_delta > delta):
-				self.gps_queue.appendleft(next_msg)
-				return self.gps_msg
-			
-			self.gps_msg = next_msg
-			delta = next_delta
+		self.gps_msg = self.get_msg(timestamp, self.gps_msg, self.gps_queue)
 
 		# TODO: loop fell through, handle potential error
 		if self.gps_msg == None: 
@@ -228,12 +229,14 @@ class Tagger(Node):
 		# TODO: finish programmatic ref determination
 		gps_msg = self.get_gps(msg.collected_at)
 		metadata['Exif.GPSInfo.GPSVersionID'] = '2 2 0 0'
-		metadata['Exif.GPSInfo.GPSLatitudeRef'] = 'North'
+		metadata['Exif.GPSInfo.GPSLatitudeRef'] = 'N'
 		metadata['Exif.GPSInfo.GPSLatitude'] = self.decimal_to_dms(gps_msg.lat)
-		metadata['Exif.GPSInfo.GPSLongitudeRef'] = 'West'
+		metadata['Exif.GPSInfo.GPSLongitudeRef'] = 'W'
 		metadata['Exif.GPSInfo.GPSLongitude'] = self.decimal_to_dms(gps_msg.lon)
+		# TODO: make sure this is encoded correctly
+		# relative_alt is AGL 
 		metadata['Exif.GPSInfo.GPSAltitudeRef'] = '0'
-		metadata['Exif.GPSInfo.GPSAltitude'] = Fraction(gps_msg.alt,1000)
+		metadata['Exif.GPSInfo.GPSAltitude'] = Fraction(gps_msg.relative_alt)
 		# figure out how to get this later
 		# metadata['Exif.GPSInfo.GPSDOP'] = Fraction(0,4294967295)
 		
@@ -242,12 +245,16 @@ class Tagger(Node):
 		metadata['Xmp.DLS.Pitch'] = attitude_msg.pitch
 		metadata['Xmp.DLS.Yaw'] = attitude_msg.yaw
 
+		# TODO: run through config object for camera parameter names
+
 		metadata.write()
 
 		self.output_pub.publish(msg)
 
 
 def main():
+	# pyexiv2 must register XMP namespaces before using them
+	# attitude metadata is not standardized, so we'll use micasense's format
 	pyexiv2.xmp.register_namespace('http://micasense.com/DLS/1.0/','DLS')
 	
 	rclpy.init()
