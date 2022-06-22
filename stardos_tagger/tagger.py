@@ -10,6 +10,7 @@ import json
 import time
 import pyexiv2
 import math
+import os
 
 class Tagger(Node):
 
@@ -18,6 +19,7 @@ class Tagger(Node):
 	gps_topic = '/global_position'
 	attitude_topic = '/attitude'
 	time_topic = '/system_time'
+	data_path = '/opt/stardos/tmp'
 
 	config: dict
 
@@ -25,6 +27,7 @@ class Tagger(Node):
 
 	nspace: str
 	aircraft_nspace: str
+	output_path: str
 
 	output_pub: Publisher
 	input_sub: Subscriber
@@ -62,6 +65,11 @@ class Tagger(Node):
 			sys.exit(126)
 
 		self.nspace = tagger.get_namespace()
+		self.output_path = f'{self.data_path}{self.nspace}'
+
+		self.get_logger().debug(f'creating {self.output_path = }')
+
+		os.makedirs(self.output_path)
         
 		self.aircraft_nspace = '/'.join(list(self.nspace.split('/')[0:2]))
 
@@ -209,9 +217,17 @@ class Tagger(Node):
 	# * tag images with positional metadata we're subscribed to
 	# * tag images with camera parameters passed in via the config
 	def tag_image(self, msg: SensorData):
-		self.get_logger().info(f'tagging image {msg.content[0]}')
+		filename = msg.content[0].split('/')[-1]
 
-		metadata = pyexiv2.ImageMetadata(msg.content[0])
+		self.get_logger().info(f'tagging image {filename}')
+
+		output_name = f'{self.output_path}/{filename}'	
+
+		self.get_logger().info(f'moving image {msg.content[0]} to {output_name}')
+
+		os.rename(msg.content[0], f'{output_name}')
+
+		metadata = pyexiv2.ImageMetadata(output_name)
 		metadata.read()
 
 		metadata['Exif.Image.NewSubfileType'] = 0
