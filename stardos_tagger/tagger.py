@@ -226,6 +226,7 @@ class Tagger(Node):
 		self.get_logger().info(f'moving image {msg.content[0]} to {output_name}')
 
 		os.rename(msg.content[0], f'{output_name}')
+		msg.content[0] = output_name
 
 		metadata = pyexiv2.ImageMetadata(output_name)
 		metadata.read()
@@ -265,14 +266,7 @@ class Tagger(Node):
 
 		metadata.write()
 
-		message = SensorData()
-
-		message.content.append(output_name)
-		message.collected_at = int(time.time() * 1000)
-		message.index = msg.index
-		message.metadata = ''
-
-		self.output_pub.publish(message)
+		self.output_pub.publish(msg)
 
 
 def main():
