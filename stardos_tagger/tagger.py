@@ -50,7 +50,7 @@ class Tagger(Node):
 
 		self.get_logger().info('initializing tagger')
 
-		TODO: add propoer config parsing w/ starcommand
+		#TODO: add proper config parsing w/ starcommand
 		if (len(sys.argv) > 1):
 			self.get_logger().info(f'loading config...')
 			args = json.loads(sys.argv[1])
@@ -83,7 +83,7 @@ class Tagger(Node):
 			self.tag_image,
 			100)
 
-		self.get_logger().info(f'subscribing to {self.aircraft_nspace}{self.attitude_topic')
+		self.get_logger().info(f'subscribing to {self.aircraft_nspace}{self.attitude_topic}')
 
 		self.attitude_sub = self.create_subscription(
 			Attitude,
