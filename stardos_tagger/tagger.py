@@ -265,7 +265,14 @@ class Tagger(Node):
 
 		metadata.write()
 
-		self.output_pub.publish(msg)
+		message = SensorData()
+
+		message.content.append(output_name)
+		message.collected_at = int(time.time() * 1000)
+		message.index = msg.index
+		message.metadata = ''
+
+		self.output_pub.publish(message)
 
 
 def main():
