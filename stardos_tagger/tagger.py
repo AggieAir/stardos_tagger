@@ -64,7 +64,7 @@ class Tagger(Node):
 			self.get_logger().error(f'failure receiving config')
 			sys.exit(126)
 
-		self.nspace = tagger.get_namespace()
+		self.nspace = self.get_namespace()
 		self.output_path = f'{self.data_path}{self.nspace}'
 
 		self.get_logger().debug(f'creating {self.output_path = }')
