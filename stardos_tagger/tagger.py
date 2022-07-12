@@ -56,7 +56,7 @@ class Tagger(Node):
 		#TODO: add proper config parsing w/ starcommand
 		if (len(sys.argv) > 1):
 			self.get_logger().info(f'loading config...')
-			args = json.loads(sys.argv[1])
+			args = json.load(sys.stdin)
 
 			self.config = args.get('config')
 			self.input_topic = args.get('input')
