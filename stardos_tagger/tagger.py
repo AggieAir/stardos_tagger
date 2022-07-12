@@ -33,11 +33,11 @@ class Tagger(Node):
 	input_sub = None
 	attitude_sub = None
 	gps_sub = None
-	time_sub = None
+	time_sub = none
 
 
 	# cached metadata messages in case sensor rate is slower than capture rate
-	gps_msg: GPSPosition = None
+	gps_msg: GlobalPosition = None
 	attitude_msg: Attitude = None
 
 	# queue of stored messages from the future
@@ -102,7 +102,7 @@ class Tagger(Node):
 		self.get_logger().info(f'subscribing to {self.aircraft_nspace}{self.gps_topic}')
 
 		self.gps_sub = self.create_subscription(
-			GPSPosition,
+		  GlobalPosition,
 			self.aircraft_nspace + self.gps_topic,
 			self.enqueue_gps,
 			100)
@@ -158,14 +158,14 @@ class Tagger(Node):
 
 
 	# subscriber method
-	def enqueue_gps(self, msg: GPSPosition):
+	def enqueue_gps(self, msg: GlobalPosition):
 		self.get_logger().info(f'appending to gps_queue')
 		self.gps_queue.append(msg)
 
 
 	# get next gps message from stored queue
 	# previous message is stored in self.gps_msg in case the queue runs dry
-	def get_gps(self, timestamp: int) -> GPSPosition:
+	def get_gps(self, timestamp: int) -> GlobalPosition:
 
 		self.gps_msg = self.get_msg(timestamp, self.gps_msg, self.gps_queue)
 
