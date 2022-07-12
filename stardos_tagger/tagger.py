@@ -29,11 +29,11 @@ class Tagger(Node):
 	aircraft_nspace: str
 	output_path: str
 
-	output_pub
-	input_sub
-	attitude_sub
-	gps_sub
-	time_sub
+	output_pub = None
+	input_sub = None
+	attitude_sub = None
+	gps_sub = None
+	time_sub = None
 
 
 	# cached metadata messages in case sensor rate is slower than capture rate
