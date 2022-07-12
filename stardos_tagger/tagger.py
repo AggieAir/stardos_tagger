@@ -33,7 +33,7 @@ class Tagger(Node):
 	input_sub = None
 	attitude_sub = None
 	gps_sub = None
-	time_sub = none
+	time_sub = None
 
 
 	# cached metadata messages in case sensor rate is slower than capture rate
