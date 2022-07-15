@@ -8,9 +8,11 @@ from fractions import Fraction
 import sys
 import json
 import time
-import pyexiv2
 import math
 import os
+
+import pyexiv2
+
 
 class Tagger(Node):
 
@@ -35,7 +37,6 @@ class Tagger(Node):
 	gps_sub = None
 	time_sub = None
 
-
 	# cached metadata messages in case sensor rate is slower than capture rate
 	gps_msg: GlobalPosition = None
 	attitude_msg: Attitude = None
@@ -53,65 +54,75 @@ class Tagger(Node):
 
 		self.get_logger().info('initializing tagger')
 
-		#TODO: add proper config parsing w/ starcommand
-		if (len(sys.argv) > 1):
-			self.get_logger().info(f'loading config...')
-			args = json.load(sys.stdin)
+		self.get_logger().info(f'loading config...')
+		args = json.load(sys.stdin)
 
-			self.config = args.get('config')
-			self.input_topic = args.get('input')
-		else:
-			self.get_logger().error(f'failure receiving config')
+		self.config = args.get('config')
+		
+		if self.config is None: 
+			self.get_logger().error(f'no config received, using dummy parameters')
+
+		self.input_topic = args.get('input')
+
+		if self.input_topic is None:
+			self.get_logger().fatal(f'no input topic received, exiting')
 			sys.exit(126)
 
 		self.nspace = self.get_namespace()
 		self.output_path = f'{self.data_path}{self.nspace}'
 
-		self.get_logger().debug(f'creating {self.output_path = }')
+		self.get_logger().info(f'writing to {self.output_path = }')
 
-		os.makedirs(self.output_path)
+		if not os.path.isdir(self.output_path):
+			self.get_logger().info(f'{self.output_path} does not exist, creating it...')
+			
+			try: 
+				os.makedirs(self.output_path)
+			except Exception as e:
+				self.get_logger().error(f'error creating {self.output_path = }: {e = }')
+
         
 		self.aircraft_nspace = '/'.join(list(self.nspace.split('/')[0:2]))
 
 		self.get_logger().debug(f'{self.nspace = }')
 		self.get_logger().debug(f'{self.aircraft_nspace = }')
 
-		self.get_logger().info(f'setting up publisher on {self.nspace}{self.output_topic}')
 
+		self.output_topic = self.nspace + self.output_topic
+		self.get_logger().info(f'setting up publisher on {self.output_topic}')
 		self.output_pub = self.create_publisher(
 			SensorData,
-			self.nspace + self.output_topic,
+			self.output_topic,
 			100)
 
 		self.get_logger().info(f'subscribing to {self.input_topic}')
-
 		self.input_sub = self.create_subscription(
 			SensorData,
 			self.input_topic,
 			self.tag_image,
 			100)
 
-		self.get_logger().info(f'subscribing to {self.aircraft_nspace}{self.attitude_topic}')
-
+		self.attitude_topic = self.aircraft_nspace + self.attitude_topic
+		self.get_logger().info(f'subscribing to {self.attitude_topic}')
 		self.attitude_sub = self.create_subscription(
 			Attitude,
-			self.aircraft_nspace + self.attitude_topic,
+			self.attitude_topic,
 			self.enqueue_attitude,
 			100)
 
-		self.get_logger().info(f'subscribing to {self.aircraft_nspace}{self.gps_topic}')
-
+		self.gps_topic = self.aircraft_nspace + self.gps_topic
+		self.get_logger().info(f'subscribing to {self.gps_topic}')
 		self.gps_sub = self.create_subscription(
 		  GlobalPosition,
-			self.aircraft_nspace + self.gps_topic,
+			self.gps_topic,
 			self.enqueue_gps,
 			100)
 
-		self.get_logger().info(f'subscribing to {self.aircraft_nspace}{self.time_topic}')
-
+		self.time_topic = self.aircraft_nspace + self.time_topic
+		self.get_logger().info(f'subscribing to {self.time_topic}')
 		self.time_sub = self.create_subscription(
 			SystemTime,
-			self.aircraft_nspace + self.time_topic,
+			self.time_topic,
 			self.get_time_offset,
 			1)
 	
@@ -142,7 +153,10 @@ class Tagger(Node):
 	# subscriber method
 	def enqueue_attitude(self, msg: Attitude):
 		# self.get_logger().info(f'appending to attitude_queue')
-		self.attitude_queue.append(msg)
+		if msg is None:
+			self.get_logger().warn(f'received empty attitude message')
+		else: 
+			self.attitude_queue.append(msg)
 
 		
 	# get next attitude message from stored queue
@@ -159,8 +173,11 @@ class Tagger(Node):
 
 	# subscriber method
 	def enqueue_gps(self, msg: GlobalPosition):
-		self.get_logger().info(f'appending to gps_queue')
-		self.gps_queue.append(msg)
+		# self.get_logger().info(f'appending to gps_queue')
+		if msg is None:
+			self.get_logger().warn(f'received empty gps message')
+		else:
+			self.gps_queue.append(msg)
 
 
 	# get next gps message from stored queue
@@ -219,6 +236,7 @@ class Tagger(Node):
 	def tag_image(self, msg: SensorData):
 		filename = msg.content[0].split('/')[-1]
 
+		#TODO: check if the image actually exists here
 		self.get_logger().info(f'tagging image {filename}')
 
 		output_name = f'{self.output_path}/{filename}'	
@@ -245,22 +263,36 @@ class Tagger(Node):
 
 		# TODO: finish programmatic ref determination
 		gps_msg = self.get_gps(msg.collected_at)
-		metadata['Exif.GPSInfo.GPSVersionID'] = '2 2 0 0'
-		metadata['Exif.GPSInfo.GPSLatitudeRef'] = 'N'
-		metadata['Exif.GPSInfo.GPSLatitude'] = self.decimal_to_dms(gps_msg.lat)
-		metadata['Exif.GPSInfo.GPSLongitudeRef'] = 'W'
-		metadata['Exif.GPSInfo.GPSLongitude'] = self.decimal_to_dms(gps_msg.lon)
-		# TODO: make sure this is encoded correctly
-		# relative_alt is AGL 
-		metadata['Exif.GPSInfo.GPSAltitudeRef'] = '0'
-		metadata['Exif.GPSInfo.GPSAltitude'] = Fraction(gps_msg.relative_alt)
-		# figure out how to get this later
-		# metadata['Exif.GPSInfo.GPSDOP'] = Fraction(0,4294967295)
+		if gps_msg is not None:
+			metadata['Exif.GPSInfo.GPSVersionID'] = '2 2 0 0'
+			metadata['Exif.GPSInfo.GPSLatitudeRef'] = 'N'
+			metadata['Exif.GPSInfo.GPSLatitude'] = self.decimal_to_dms(gps_msg.lat)
+			metadata['Exif.GPSInfo.GPSLongitudeRef'] = 'W'
+			metadata['Exif.GPSInfo.GPSLongitude'] = self.decimal_to_dms(gps_msg.lon)
+
+			# TODO: make sure this is encoded correctly
+			# relative_alt is AGL 
+			metadata['Exif.GPSInfo.GPSAltitudeRef'] = '0'
+
+			if gps_msg.relative_alt < 0:
+				self.get_logger().warn(f'value out of range, skipping: {gps_msg.relative_alt = }')
+				metadata['Exif.GPSInfo.GPSAltitude'] = Fraction(0)
+			else: 
+				metadata['Exif.GPSInfo.GPSAltitude'] = Fraction(gps_msg.relative_alt, 1000)
+
+			# figure out how to get this later
+			# metadata['Exif.GPSInfo.GPSDOP'] = Fraction(0,4294967295)
+		else:
+			self.get_logger().error('skipping gps tags')
 		
 		attitude_msg = self.get_attitude(msg.collected_at)
-		metadata['Xmp.DLS.Roll'] = attitude_msg.roll
-		metadata['Xmp.DLS.Pitch'] = attitude_msg.pitch
-		metadata['Xmp.DLS.Yaw'] = attitude_msg.yaw
+		if attitude_msg is not None:
+			metadata['Xmp.DLS.Roll'] = attitude_msg.roll
+			metadata['Xmp.DLS.Pitch'] = attitude_msg.pitch
+			metadata['Xmp.DLS.Yaw'] = attitude_msg.yaw
+		else:
+			self.get_logger().error('skipping attitude tags')
+			
 
 		# TODO: run through config object for camera parameter names
 
