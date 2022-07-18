@@ -271,14 +271,17 @@ class Tagger(Node):
 			metadata['Exif.GPSInfo.GPSLongitude'] = self.decimal_to_dms(gps_msg.lon)
 
 			# TODO: make sure this is encoded correctly
-			# relative_alt is AGL 
 			metadata['Exif.GPSInfo.GPSAltitudeRef'] = '0'
 
-			if gps_msg.relative_alt < 0:
-				self.get_logger().warn(f'value out of range, skipping: {gps_msg.relative_alt = }')
+			# relative_alt is AGL
+			# alt is MSL
+			alt = gps_msg.alt
+
+			if alt < 0:
+				self.get_logger().warn(f'value out of range, skipping: {alt = }')
 				metadata['Exif.GPSInfo.GPSAltitude'] = Fraction(0)
 			else: 
-				metadata['Exif.GPSInfo.GPSAltitude'] = Fraction(gps_msg.relative_alt, 1000)
+				metadata['Exif.GPSInfo.GPSAltitude'] = Fraction(alt, 1000)
 
 			# figure out how to get this later
 			# metadata['Exif.GPSInfo.GPSDOP'] = Fraction(0,4294967295)
