@@ -30,7 +30,7 @@ class Tagger(Node):
 
 	# measured in seconds
 	heartbeat_cadence: 1 
-	hearbeat_timer: None
+	heartbeat_timer: None
 
 	nspace: str
 	aircraft_nspace: str
