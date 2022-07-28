@@ -37,7 +37,7 @@ class Tagger(Node):
 	output_path: str
 
 	output_pub = None
-	hearbeat_pub = None
+	heartbeat_pub = None
 	input_sub = None
 	attitude_sub = None
 	gps_sub = None
@@ -101,7 +101,7 @@ class Tagger(Node):
 			100)
 
 		self.get_logger().info(f'setting up publisher on {self.nspace}{self.heartbeat_topic}')
-		self.hearbeat_pub = self.create_publisher(
+		self.heartbeat_pub = self.create_publisher(
 			NodeHeartbeat,
 			self.heartbeat_topic,
 			100)
@@ -137,11 +137,11 @@ class Tagger(Node):
 			self.get_time_offset,
 			1)
 			
-		self.hearbeat_timer = self.create_timer(self.heartbeat_cadence, self.hearbeat_callback)
+		self.heartbeat_timer = self.create_timer(self.heartbeat_cadence, self.heartbeat_callback)
 	
-	def hearbeat_callback(self):
+	def heartbeat_callback(self):
 		msg = NodeHeartbeat()
-		self.hearbeat_pub.publish(msg)
+		self.heartbeat_pub.publish(msg)
 		self.get_logger().debug(f'sending heartbeat message {msg}')
 
 	# get next messasge from queue passed in
