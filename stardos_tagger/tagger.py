@@ -18,7 +18,7 @@ class Tagger(Node):
 
 	input_topic: str
 	output_topic = 'data'
-	hearbeat_topic = 'heartbeat'
+	heartbeat_topic = 'heartbeat'
 	gps_topic = '/global_position'
 	attitude_topic = '/attitude'
 	time_topic = '/system_time'
