@@ -29,7 +29,7 @@ class Tagger(Node):
 	time_offset: int
 
 	# measured in seconds
-	heartbeat_cadence: 1 
+	heartbeat_cadence = 1 
 	heartbeat_timer: None
 
 	nspace: str
