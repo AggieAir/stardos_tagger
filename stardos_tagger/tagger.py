@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from stardos_interfaces.msg import SensorData, Attitude, GlobalPosition, SystemTime
+from stardos_interfaces.msg import SensorData, Attitude, GlobalPosition, SystemTime, NodeHeartbeat
 
 from datetime import datetime
 from collections import deque
@@ -18,6 +18,7 @@ class Tagger(Node):
 
 	input_topic: str
 	output_topic = 'data'
+	hearbeat_topic = 'heartbeat'
 	gps_topic = '/global_position'
 	attitude_topic = '/attitude'
 	time_topic = '/system_time'
@@ -27,11 +28,16 @@ class Tagger(Node):
 
 	time_offset: int
 
+	# measured in seconds
+	heartbeat_cadence: 1 
+	hearbeat_timer: None
+
 	nspace: str
 	aircraft_nspace: str
 	output_path: str
 
 	output_pub = None
+	hearbeat_pub = None
 	input_sub = None
 	attitude_sub = None
 	gps_sub = None
@@ -88,11 +94,16 @@ class Tagger(Node):
 		self.get_logger().debug(f'{self.aircraft_nspace = }')
 
 
-		self.output_topic = self.nspace + self.output_topic
-		self.get_logger().info(f'setting up publisher on {self.output_topic}')
+		self.get_logger().info(f'setting up publisher on {self.nspace}{self.output_topic}')
 		self.output_pub = self.create_publisher(
 			SensorData,
 			self.output_topic,
+			100)
+
+		self.get_logger().info(f'setting up publisher on {self.nspace}{self.heartbeat_topic}')
+		self.hearbeat_pub = self.create_publisher(
+			NodeHeartbeat,
+			self.heartbeat_topic,
 			100)
 
 		self.get_logger().info(f'subscribing to {self.input_topic}')
@@ -125,7 +136,13 @@ class Tagger(Node):
 			self.time_topic,
 			self.get_time_offset,
 			1)
+			
+		self.hearbeat_timer = self.create_timer(self.heartbeat_cadence, self.hearbeat_callback)
 	
+	def hearbeat_callback(self):
+		msg = NodeHeartbeat()
+		self.hearbeat_pub.publish(msg)
+		self.get_logger().debug(f'sending heartbeat message {msg}')
 
 	# get next messasge from queue passed in
 	def get_msg(self, timestamp: int, msg, queue: deque):
