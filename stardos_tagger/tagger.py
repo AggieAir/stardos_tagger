@@ -55,8 +55,8 @@ class Tagger(Node):
 	def __init__(self):
 		super().__init__('tagger')
 
-		self.attitude_queue = deque()
-		self.gps_queue = deque()
+		self.attitude_queue = deque(maxlen=1000)
+		self.gps_queue = deque(maxlen=1000)
 
 		self.get_logger().info('initializing tagger')
 
