@@ -308,9 +308,9 @@ class Tagger(StardosNode):
 		
 		attitude_msg = self.get_attitude(msg.collected_at)
 		if attitude_msg is not None:
-			metadata['Xmp.DLS.Roll'] = attitude_msg.roll
-			metadata['Xmp.DLS.Pitch'] = attitude_msg.pitch
-			metadata['Xmp.DLS.Yaw'] = attitude_msg.yaw
+			metadata['Xmp.Camera.Roll'] = attitude_msg.roll
+			metadata['Xmp.Camera.Pitch'] = attitude_msg.pitch
+			metadata['Xmp.Camera.Yaw'] = attitude_msg.yaw
 		else:
 			self.get_logger().error('skipping attitude tags')
 			
@@ -325,7 +325,8 @@ class Tagger(StardosNode):
 def main():
 	# pyexiv2 must register XMP namespaces before using them
 	# attitude metadata is not standardized, so we'll use micasense's format
-	pyexiv2.xmp.register_namespace('http://micasense.com/DLS/1.0/','DLS')
+	# pyexiv2.xmp.register_namespace('http://micasense.com/DLS/1.0/','DLS')
+	# ^^ this is probably outdated. we're moving to Xmp.Camera.Roll / Pitch / Yaw
 	
 	rclpy.init()
 	tagger = Tagger()
