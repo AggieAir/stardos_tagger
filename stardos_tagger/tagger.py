@@ -1,7 +1,8 @@
+import enum
 import rclpy
 from rclpy.node import Node
 from stardos_interfaces.msg import SensorData, Attitude, GlobalPosition, SystemTime, NodeHeartbeat
-from libstardos import StardosNode
+from pylibstardos import StardosNode
 
 from datetime import datetime
 from collections import deque
@@ -13,6 +14,11 @@ import math
 import os
 
 import pyexiv2
+
+class NodeState(enum.IntEnum):
+	INITIALIZING = 0
+	PRIMARY = 10
+	STANDBY = 12
 
 
 class Tagger(StardosNode):
@@ -137,6 +143,8 @@ class Tagger(StardosNode):
 			self.time_topic,
 			self.get_time_offset,
 			1)
+
+		self.heartbeat_message.state = NodeState.STANDBY
 			
 		# self.heartbeat_timer = self.create_timer(self.heartbeat_cadence, self.heartbeat_callback)
 	
@@ -252,6 +260,7 @@ class Tagger(StardosNode):
 	# * tag images with positional metadata we're subscribed to
 	# * tag images with camera parameters passed in via the config
 	def tag_image(self, msg: SensorData):
+		self.heartbeat_message.state = NodeState.PRIMARY
 		filename = msg.content[0].split('/')[-1]
 
 		#TODO: check if the image actually exists here
@@ -320,6 +329,8 @@ class Tagger(StardosNode):
 		metadata.write()
 
 		self.output_pub.publish(msg)
+
+		self.heartbeat_message.state = NodeState.STANDBY
 
 
 def main():
