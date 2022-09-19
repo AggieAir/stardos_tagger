@@ -222,6 +222,7 @@ class Tagger(StardosNode):
 	def get_time_offset(self, msg: SystemTime):
 		self.time_offset = (msg.time_unix_us / 1000) - msg.time_boot_ms
 		self.get_logger().info(f'setting time offset {self.time_offset}')
+		self.get_logger().info(f'time_offset after conversion is {datetime.fromtimestamp(self.time_offset / 1000).strftime("%Y:%m:%d %H:%M:%S")}')
 		self.get_logger().info('removing system_time subscriber')
 		if not self.destroy_subscription(self.time_sub):
 			self.get_logger().error('failure to destroy time offset subscription')
@@ -283,6 +284,8 @@ class Tagger(StardosNode):
 		metadata['Exif.Image.Software'] = 'USU AggieAir STARDOS'
 		metadata['Exif.Photo.ExifVersion'] = '2.30'
 
+		self.get_logger().info(f'time after conversion is {datetime.fromtimestamp(msg.collected_at / 1000).strftime("%Y:%m:%d %H:%M:%S")}')
+
 		# TODO: perhaps set Exif.Photo.SubSecTime based off of time remainder here?
 		metadata['Exif.Image.DateTime'] = datetime.fromtimestamp(msg.collected_at / 1000).strftime('%Y:%m:%d %H:%M:%S')
 
@@ -336,7 +339,7 @@ class Tagger(StardosNode):
 def main():
 	# pyexiv2 must register XMP namespaces before using them
 	# attitude metadata is not standardized, so we'll use micasense's format
-	# pyexiv2.xmp.register_namespace('http://micasense.com/DLS/1.0/','DLS')
+	pyexiv2.xmp.register_namespace('http://pix4d.com/camera/1.0/','Camera')
 	# ^^ this is probably outdated. we're moving to Xmp.Camera.Roll / Pitch / Yaw
 	
 	rclpy.init()
