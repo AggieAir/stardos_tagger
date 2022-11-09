@@ -2,7 +2,7 @@ import enum
 import rclpy
 from rclpy.node import Node
 from stardos_interfaces.msg import SensorData, Attitude, GlobalPosition, SystemTime, NodeHeartbeat
-from pylibstardos import StardosNode
+from pylibstardos.pipeline_node import PipelineNode
 
 from datetime import datetime
 from collections import deque
@@ -21,7 +21,7 @@ class NodeState(enum.IntEnum):
 	STANDBY = 12
 
 
-class Tagger(StardosNode):
+class Tagger(PipelineNode):
 
 	input_topic: str
 	output_topic = 'data'
@@ -260,7 +260,7 @@ class Tagger(StardosNode):
 	# main usage of this node: 
 	# * tag images with positional metadata we're subscribed to
 	# * tag images with camera parameters passed in via the config
-	def tag_image(self, msg: SensorData):
+	def process(self, msg: SensorData):
 		self.heartbeat_message.state = NodeState.PRIMARY
 		filename = msg.content[0].split('/')[-1]
 
