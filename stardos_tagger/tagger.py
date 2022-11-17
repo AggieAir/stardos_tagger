@@ -31,8 +31,6 @@ class Tagger(PipelineNode):
 	time_topic = '/system_time'
 	data_path = '/opt/stardos/tmp'
 
-	config: dict
-
 	time_offset: int
 
 	# measured in seconds
@@ -41,7 +39,6 @@ class Tagger(PipelineNode):
 
 	nspace: str
 	aircraft_nspace: str
-	output_path: str
 
 	output_pub = None
 	# heartbeat_pub = None
@@ -60,7 +57,7 @@ class Tagger(PipelineNode):
 	
 
 	def __init__(self):
-		super().__init__('tagger')
+		super().__init__('tagger', )
 
 		self.attitude_queue = deque(maxlen=1000)
 		self.gps_queue = deque(maxlen=1000)
@@ -68,33 +65,12 @@ class Tagger(PipelineNode):
 		self.get_logger().info('initializing tagger')
 
 		self.get_logger().info(f'loading config...')
-		args = json.load(sys.stdin)
 
-		self.config = args.get('config')
-		
 		if self.config is None: 
 			self.get_logger().error(f'no config received, using dummy parameters')
 
-		self.input_topic = args.get('input')
-
-		if self.input_topic is None:
-			self.get_logger().fatal(f'no input topic received, exiting')
-			sys.exit(126)
-
 		self.nspace = self.get_namespace()
-		self.output_path = f'{self.data_path}{self.nspace}'
 
-		self.get_logger().info(f'writing to {self.output_path = }')
-
-		if not os.path.isdir(self.output_path):
-			self.get_logger().info(f'{self.output_path} does not exist, creating it...')
-			
-			try: 
-				os.makedirs(self.output_path)
-			except Exception as e:
-				self.get_logger().error(f'error creating {self.output_path = }: {e = }')
-
-        
 		self.aircraft_nspace = '/'.join(list(self.nspace.split('/')[0:2]))
 
 		self.get_logger().debug(f'{self.nspace = }')
@@ -112,13 +88,6 @@ class Tagger(PipelineNode):
 		# 	NodeHeartbeat,
 		# 	self.heartbeat_topic,
 		# 	100)
-
-		self.get_logger().info(f'subscribing to {self.input_topic}')
-		self.input_sub = self.create_subscription(
-			SensorData,
-			self.input_topic,
-			self.tag_image,
-			100)
 
 		self.attitude_topic = self.aircraft_nspace + self.attitude_topic
 		self.get_logger().info(f'subscribing to {self.attitude_topic}')
@@ -267,7 +236,7 @@ class Tagger(PipelineNode):
 		#TODO: check if the image actually exists here
 		self.get_logger().info(f'tagging image {filename}')
 
-		output_name = f'{self.output_path}/{filename}'	
+		output_name = f'{self.data_out_path}/{filename}'	
 
 		self.get_logger().info(f'moving image {msg.content[0]} to {output_name}')
 

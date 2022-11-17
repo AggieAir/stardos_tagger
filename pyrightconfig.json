@@ -1,0 +1,7 @@
+{
+	"extraPaths": [
+		"/opt/ros/humble/lib/python3.10/site-packages/",
+		"../../install/stardos_interfaces/local/lib/python3.10/dist-packages/",
+		"../../install/pylibstardos/lib/python3.10/site-packages/"
+	]
+}
