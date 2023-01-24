@@ -13,6 +13,8 @@ import time
 import math
 import os
 
+from signal import SIGTERM, signal
+
 import pyexiv2
 
 class NodeState(enum.IntEnum):
@@ -313,6 +315,15 @@ def main():
 	
 	rclpy.init()
 	tagger = Tagger()
+
+	def sigterm(_signo, _):
+		if _signo == SIGTERM:
+			tagger.get_logger().info("Exiting...")
+			tagger.destroy_node()
+			rclpy.shutdown()
+			sys.exit(0)
+
+	signal(SIGTERM, sigterm)
 
 	rclpy.spin(tagger)
 
