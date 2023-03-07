@@ -132,7 +132,7 @@ class Tagger(PipelineNode):
 		while queue: 
 
 			next_msg = queue.popleft()
-			next_delta = abs((next_msg.time_boot_ms + self.time_offset) - timestamp)
+			next_delta = abs((next_msg.time_boot_ms + self.get_time_offset) - timestamp)
 
 			# if delta gets bigger, then current message is the closest
 			# make sure to put next back
