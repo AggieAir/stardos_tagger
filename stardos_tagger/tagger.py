@@ -19,7 +19,8 @@ import pyexiv2
 
 class NodeState(enum.IntEnum):
 	INITIALIZING = 0
-	PRIMARY = 10
+	INIT_WAITING_FOR_TIME_OFFSET = 1
+	OPERATING = 10
 	STANDBY = 12
 
 
@@ -33,7 +34,7 @@ class Tagger(PipelineNode):
 	time_topic = '/system_time'
 	data_path = '/opt/stardos/tmp'
 
-	time_offset: int
+	time_offset: int = 0
 
 	# measured in seconds
 	# heartbeat_cadence = 1 
@@ -60,6 +61,8 @@ class Tagger(PipelineNode):
 
 	def __init__(self):
 		super().__init__('tagger')
+
+		self.heartbeat_message.state = NodeState.INITIALIZING
 
 		self.attitude_queue = deque(maxlen=1000)
 		self.gps_queue = deque(maxlen=1000)
@@ -115,7 +118,7 @@ class Tagger(PipelineNode):
 			self.get_time_offset,
 			1)
 
-		self.heartbeat_message.state = NodeState.STANDBY
+		self.heartbeat_message.state = NodeState.INIT_WAITING_FOR_TIME_OFFSET
 			
 		# self.heartbeat_timer = self.create_timer(self.heartbeat_cadence, self.heartbeat_callback)
 	
@@ -132,7 +135,7 @@ class Tagger(PipelineNode):
 		while queue: 
 
 			next_msg = queue.popleft()
-			next_delta = abs((next_msg.time_boot_ms + self.get_time_offset) - timestamp)
+			next_delta = abs((next_msg.time_boot_ms + self.time_offset) - timestamp)
 
 			# if delta gets bigger, then current message is the closest
 			# make sure to put next back
@@ -198,6 +201,8 @@ class Tagger(PipelineNode):
 		if not self.destroy_subscription(self.time_sub):
 			self.get_logger().error('failure to destroy time offset subscription')
 
+		self.heartbeat_message.state = NodeState.STANDBY
+
 
 	# these utility functions from stack overflow: 
 	# https://stackoverflow.com/questions/10799366/geotagging-jpegs-with-pyexiv2
@@ -232,7 +237,7 @@ class Tagger(PipelineNode):
 	# * tag images with positional metadata we're subscribed to
 	# * tag images with camera parameters passed in via the config
 	def process(self, msg: SensorData):
-		self.heartbeat_message.state = NodeState.PRIMARY
+		self.heartbeat_message.state = NodeState.OPERATING
 		filename = msg.content[0].split('/')[-1]
 
 		#TODO: check if the image actually exists here

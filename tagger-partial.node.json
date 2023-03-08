@@ -90,7 +90,25 @@
 				"required": false
 			}
     ],
-    "errors": []
+    "errors": [],
+		"states": {
+			0: {
+				"name": "INITIALIZING",
+				"description": "Node has been started and has not finished assigning all publishers and subscribers."
+			},
+			1: {
+				"name": "INIT_WAITING_FOR_TIME_OFFSET",
+				"description": "Node has been initialized and is waiting to receive a SystemTime message for accurate tagging."
+			},
+			10: {
+				"name": "OPERATING",
+				"description": "Currently tagging an image."
+			},
+			12: {
+				"name": "STANDBY",
+				"description": "Fully initialized, waiting for images to tag."
+			},
+		},
   },
   "type": "node_definition"
 }
