@@ -28,7 +28,6 @@ class Tagger(PipelineNode):
 
 	input_topic: str
 	output_topic = 'data'
-	# heartbeat_topic = 'heartbeat'
 	gps_topic = '/global_position'
 	attitude_topic = '/attitude'
 	time_topic = '/system_time'
@@ -36,15 +35,10 @@ class Tagger(PipelineNode):
 
 	time_offset: int = 0
 
-	# measured in seconds
-	# heartbeat_cadence = 1 
-	# heartbeat_timer: None
-
 	nspace: str
 	aircraft_nspace: str
 
 	output_pub = None
-	# heartbeat_pub = None
 	input_sub = None
 	attitude_sub = None
 	gps_sub = None
@@ -88,12 +82,6 @@ class Tagger(PipelineNode):
 			self.output_topic,
 			100)
 
-		# self.get_logger().info(f'setting up publisher on {self.nspace}{self.heartbeat_topic}')
-		# self.heartbeat_pub = self.create_publisher(
-		# 	NodeHeartbeat,
-		# 	self.heartbeat_topic,
-		# 	100)
-
 		self.attitude_topic = self.aircraft_nspace + self.attitude_topic
 		self.get_logger().info(f'subscribing to {self.attitude_topic}')
 		self.attitude_sub = self.create_subscription(
@@ -120,12 +108,6 @@ class Tagger(PipelineNode):
 
 		self.heartbeat_message.state = NodeState.INIT_WAITING_FOR_TIME_OFFSET
 			
-		# self.heartbeat_timer = self.create_timer(self.heartbeat_cadence, self.heartbeat_callback)
-	
-	# def heartbeat_callback(self):
-	# 	msg = NodeHeartbeat()
-	# 	self.heartbeat_pub.publish(msg)
-	# 	self.get_logger().debug(f'sending heartbeat message {msg}')
 
 	# get next messasge from queue passed in
 	def get_msg(self, timestamp: int, msg, queue: deque):
