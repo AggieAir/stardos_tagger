@@ -1,12 +1,33 @@
 {
-  "content": {
-    "name": "tagger-partial",
-    "human_name": "Tagger-partial",
-    "description": "Tag images with EXIF metadata",
-    "executable": "tagger.py",
-    "input_type": "any",
-    "output_type": "any",
-    "config_entries": [
+	"content": {
+		"name": "tagger",
+		"human_name": "Tagger",
+		"description": "Tag images with EXIF metadata",
+		"executable": "tagger.py",
+		"input_type": "any",
+		"output_type": "any",
+		"errors": [
+			{
+				"name": "Attitude Queue Empty",
+				"description": "Attitude Queue fell through, using older message.",
+				"set_status": 4
+			},
+			{
+				"name": "GPS Queue Empty",
+				"description": "GPS Queue fell through, using older message.",
+				"set_status": 4
+			},
+
+		],
+		"config_entries": [
+			{
+				"name": "time_offset_required",
+				"human_name": "Time offset required?",
+				"description": "If no RTC is available, a time offset will be calculated based on the payload's boot time and the mavlink SystemTime messages to attempt to tag images accurately.",
+				"type": 4,
+				"choices": null,
+				"required": false
+			},
 			{
 				"name": "Exif.Image.Make",
 				"human_name": "Make",
@@ -27,9 +48,9 @@
 				"name": "Exif.Photo.ExposureTime",
 				"human_name": "Exposure Time",
 				"description": "Camera exposure time in seconds",
-				"type": 2,
+				"type": 1,
 				"choices": null,
-				"required": false
+				"required": false,
 			},
 			{
 				"name": "Exif.Photo.FNumber",
@@ -37,7 +58,7 @@
 				"description": "Ratio of focal length to aperture diameter",
 				"type": 1,
 				"choices": null,
-				"required": false
+				"required": false,
 			},
 			{
 				"name": "Exif.Photo.ExposureProgram",
@@ -55,7 +76,7 @@
 					"portrait",
 					"landscape"
 				],
-				"required": false
+				"required": false,
 			},
 			{
 				"name": "Exif.Photo.ISOSpeed",
@@ -63,12 +84,12 @@
 				"description": "Light sensitivity of camera sensor",
 				"type": 0,
 				"choices": null,
-				"required": false
+				"required": false,
 			},
 			{
 				"name": "Exif.Photo.MeteringMode",
-				"human_name": "Metering Mode",
-				"description": "Camera metering mode",
+				"human_name": ,
+				"description": ,
 				"type": 3,
 				"choices": [
 					"unknown",
@@ -79,7 +100,7 @@
 					"pattern",
 					"partial"
 				],
-				"required": false
+				"required": false,
 			},
 			{
 				"name": "Exif.Photo.FocalLength",
@@ -87,10 +108,47 @@
 				"description": "Focal length of camera lens",
 				"type": 1,
 				"choices": null,
-				"required": false
-			}
-    ],
-    "errors": [],
+				"required": false,
+			},
+			{
+				"name": "Exif.Photo.SubSecTime",
+				"human_name": "Sub Second Time",
+				"description": "Time remainder less than one second",
+				"type": 1,
+				"choices": null,
+				"required": false,
+			},
+			{
+				"name": "Exif.Photo.FocalPlaneXResolution",
+				"human_name": "Focal Plane X Resolution",
+				"description": "Pixel resolution in pixels/unit",
+				"type": 1,
+				"choices": null,
+				"required": false,
+			},
+			{
+				"name": "Exif.Photo.FocalPlaneYResolution",
+				"human_name": "Focal Plane Y Resolution",
+				"description": "Pixel resolution in pixels/unit",
+				"type": 1,
+				"choices": null,
+				"required": false,
+			},
+			{
+				"name": "Exif.Photo.FocalPlaneResolutionUnit",
+				"human_name": "Focal Plane Resolution Unit",
+				"description": "What unit the focal plane resolution values are using",
+				"type": 2,
+				"choices": [
+					"inch",
+					"mm",
+					"cm",
+					"m",
+					"km",
+				],
+				"required": false,
+			},
+		],
 		"states": {
 			0: {
 				"name": "INITIALIZING",
@@ -111,4 +169,5 @@
 		},
   },
   "type": "node_definition"
+	},
 }

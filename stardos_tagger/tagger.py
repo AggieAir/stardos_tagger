@@ -1,27 +1,34 @@
-import enum
 import rclpy
 from rclpy.node import Node
 from stardos_interfaces.msg import SensorData, Attitude, GlobalPosition, SystemTime, NodeHeartbeat
 from pylibstardos.pipeline_node import PipelineNode
+from pylibstardos.utils import BitArray
 
 from datetime import datetime
 from collections import deque
 from fractions import Fraction
+from signal import SIGTERM, signal
 import sys
 import json
 import time
 import math
 import os
-
-from signal import SIGTERM, signal
-
+import enum
+# this is referring to py3exiv2, which is different from pyexiv2 but is imported the same way
+# https://python3-exiv2.readthedocs.io/en/latest/
 import pyexiv2
+
 
 class NodeState(enum.IntEnum):
 	INITIALIZING = 0
 	INIT_WAITING_FOR_TIME_OFFSET = 1
 	OPERATING = 10
 	STANDBY = 12
+
+
+class ErrorMask(enum.IntEnum):
+	ATTITUDE_QUEUE_EMPTY = 1
+	GPS_QUEUE_EMPTY = 2
 
 
 class Tagger(PipelineNode):
@@ -66,7 +73,8 @@ class Tagger(PipelineNode):
 		self.get_logger().info(f'loading config...')
 
 		if self.config is None: 
-			self.get_logger().error(f'no config received, using dummy parameters')
+			self.get_logger().warn(f'no config received, using dummy parameters')
+			# ezri says to set a warning bit here, defined in the node config
 
 		self.nspace = self.get_namespace()
 
@@ -98,16 +106,23 @@ class Tagger(PipelineNode):
 			self.enqueue_gps,
 			100)
 
-		self.time_topic = self.aircraft_nspace + self.time_topic
-		self.get_logger().info(f'subscribing to {self.time_topic}')
-		self.time_sub = self.create_subscription(
-			SystemTime,
-			self.time_topic,
-			self.get_time_offset,
-			1)
+		# TODO: this may need more work. when we're testing in simulation, our clock will be accurate,
+		# but in the field we may not have access to reliable time other than what we get from the gps.
+		# my best effort for now is to try to calculate a time offset based what the current time is, but
+		# this will probably need to be changed as we proceed with field testing.
+		if (self.config['time_offset_required']):
+			self.time_topic = self.aircraft_nspace + self.time_topic
+			self.get_logger().info(f'subscribing to {self.time_topic}')
+			self.time_sub = self.create_subscription(
+				SystemTime,
+				self.time_topic,
+				self.get_time_offset,
+				1)
 
-		self.heartbeat_message.state = NodeState.INIT_WAITING_FOR_TIME_OFFSET
-			
+			self.heartbeat_message.state = NodeState.INIT_WAITING_FOR_TIME_OFFSET
+		else:
+			self.heartbeat_message.state = NodeState.STANDBY
+
 
 	# get next messasge from queue passed in
 	def get_msg(self, timestamp: int, msg, queue: deque):
@@ -146,9 +161,11 @@ class Tagger(PipelineNode):
 	def get_attitude(self, timestamp: int) -> Attitude:
 		self.attitude_msg = self.get_msg(timestamp, self.attitude_msg, self.attitude_queue)
 
-		# TODO: loop fell through, handle potential error
+		# TODO: loop fell through
+		# 
 		if self.attitude_msg == None: 
-			self.get_logger().error('attitude queue fell through')
+			self.get_logger().warn('attitude queue fell through, using latest message')
+			self.heartbeat_message.errors 
 
 		return self.attitude_msg
 
@@ -168,9 +185,9 @@ class Tagger(PipelineNode):
 
 		self.gps_msg = self.get_msg(timestamp, self.gps_msg, self.gps_queue)
 
-		# TODO: loop fell through, handle potential error
+		# TODO: loop fell through
 		if self.gps_msg == None: 
-			self.get_logger().error('gps queue fell through')
+			self.get_logger().warn('gps queue fell through, using latest message')
 
 		return self.gps_msg
 

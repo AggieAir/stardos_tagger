@@ -6,7 +6,28 @@
 		"executable": "tagger.py",
 		"input_type": "any",
 		"output_type": "any",
+		"errors": [
+			{
+				"name": "Attitude Queue Empty",
+				"description": "Attitude Queue fell through, using older message.",
+				"set_status": 4
+			},
+			{
+				"name": "GPS Queue Empty",
+				"description": "GPS Queue fell through, using older message.",
+				"set_status": 4
+			},
+
+		],
 		"config_entries": [
+			{
+				"name": "time_offset_required",
+				"human_name": "Time offset required?",
+				"description": "If no RTC is available, a time offset will be calculated based on the payload's boot time and the mavlink SystemTime messages to attempt to tag images accurately.",
+				"type": 4,
+				"choices": null,
+				"required": false
+			},
 			{
 				"name": "Exif.Image.Make",
 				"human_name": "Make",
@@ -91,46 +112,53 @@
 			},
 			{
 				"name": "Exif.Photo.SubSecTime",
-				"human_name": "SubSecond Time",
+				"human_name": "Sub Second Time",
 				"description": "Time remainder less than one second",
-				"type": ,
-				"choices": ,
+				"type": 1,
+				"choices": null,
 				"required": false,
 			},
 			{
 				"name": "Exif.Photo.FocalPlaneXResolution",
-				"human_name": ,
-				"description": ,
-				"type": ,
-				"choices": ,
+				"human_name": "Focal Plane X Resolution",
+				"description": "Pixel resolution in pixels/unit",
+				"type": 1,
+				"choices": null,
 				"required": false,
 			},
 			{
 				"name": "Exif.Photo.FocalPlaneYResolution",
-				"human_name": ,
-				"description": ,
-				"type": ,
-				"choices": ,
+				"human_name": "Focal Plane Y Resolution",
+				"description": "Pixel resolution in pixels/unit",
+				"type": 1,
+				"choices": null,
 				"required": false,
 			},
 			{
 				"name": "Exif.Photo.FocalPlaneResolutionUnit",
-				"human_name": ,
-				"description": ,
+				"human_name": "Focal Plane Resolution Unit",
+				"description": "What unit the focal plane resolution values are using",
+				"type": 2,
+				"choices": [
+					"inch",
+					"mm",
+					"cm",
+					"m",
+					"km",
+				],
+				"required": false,
+			},
+			TODO: finish the rest of this config spec
+			{
+				"name": "Exif.Image.BlackLevelRepeatDim"",
+				"human_name": "Black Level Repeat Dim",
+				"description": "Black level repeat pattern size",
 				"type": ,
 				"choices": ,
 				"required": false,
 			},
 			{
-				"name": "Exif.Photo.BlackLevelRepeatDim"",
-				"human_name": ,
-				"description": ,
-				"type": ,
-				"choices": ,
-				"required": false,
-			},
-			{
-				"name": "Exif.Photo.BlackLevel",
+				"name": "Exif.Image.BlackLevel",
 				"human_name": ,
 				"description": ,
 				"type": ,
@@ -386,7 +414,25 @@
 				"required": false,
 			}
 		],
-		"errors": []
+		"states": {
+			0: {
+				"name": "INITIALIZING",
+				"description": "Node has been started and has not finished assigning all publishers and subscribers."
+			},
+			1: {
+				"name": "INIT_WAITING_FOR_TIME_OFFSET",
+				"description": "Node has been initialized and is waiting to receive a SystemTime message for accurate tagging."
+			},
+			10: {
+				"name": "OPERATING",
+				"description": "Currently tagging an image."
+			},
+			12: {
+				"name": "STANDBY",
+				"description": "Fully initialized, waiting for images to tag."
+			},
+		},
+  },
+  "type": "node_definition"
 	},
-	"type": "NodeDefinition"
 }
