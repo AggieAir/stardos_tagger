@@ -88,6 +88,13 @@
 				"type": 1,
 				"choices": null,
 				"required": false
+			},
+			{
+				"name": "time_offset_required",
+				"human_name": "Time Offset Required",
+				"description": "Whether or not to adjust for time offset.",
+				"type": 4,
+				"required": true
 			}
 		],
 		"errors": []
