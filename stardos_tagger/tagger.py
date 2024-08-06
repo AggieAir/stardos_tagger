@@ -123,6 +123,15 @@ class Tagger(PipelineNode):
 		else:
 			self.heartbeat_message.state = NodeState.STANDBY
 
+		with self.state_mutex:
+			self.heartbeat_message.state = NodeState.STANDBY
+			
+		# self.heartbeat_timer = self.create_timer(self.heartbeat_cadence, self.heartbeat_callback)
+	
+	# def heartbeat_callback(self):
+	# 	msg = NodeHeartbeat()
+	# 	self.heartbeat_pub.publish(msg)
+	# 	self.get_logger().debug(f'sending heartbeat message {msg}')
 
 	# get next messasge from queue passed in
 	def get_msg(self, timestamp: int, msg, queue: deque):
@@ -236,7 +245,13 @@ class Tagger(PipelineNode):
 	# * tag images with positional metadata we're subscribed to
 	# * tag images with camera parameters passed in via the config
 	def process(self, msg: SensorData):
+<<<<<<< HEAD
 		self.heartbeat_message.state = NodeState.OPERATING
+=======
+		with self.state_mutex:
+			self.heartbeat_message.state = NodeState.PRIMARY
+
+>>>>>>> b912669 (use state mutex when setting state)
 		filename = msg.content[0].split('/')[-1]
 
 		#TODO: check if the image actually exists here
@@ -310,7 +325,8 @@ class Tagger(PipelineNode):
 
 		self.output_pub.publish(msg)
 
-		self.heartbeat_message.state = NodeState.STANDBY
+		with self.state_mutex:
+			self.heartbeat_message.state = NodeState.STANDBY
 
 
 def main():
