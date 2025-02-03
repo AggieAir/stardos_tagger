@@ -253,8 +253,8 @@ class Tagger(PipelineNode):
 		metadata.read()
 
 		metadata['Exif.Image.NewSubfileType'] = 0
-		metadata['Exif.Image.Make'] = 'makename'
-		metadata['Exif.Image.Model'] = 'modelname'
+		metadata['Exif.Image.Make'] = 'USU AggieAir STARDOS'
+		metadata['Exif.Image.Model'] = 'STARDOS Fake Altum PT Pancromatic'
 		metadata['Exif.Image.Orientation'] = 1
 		metadata['Exif.Image.Software'] = 'USU AggieAir STARDOS'
 		metadata['Exif.Photo.ExifVersion'] = '2.30'
