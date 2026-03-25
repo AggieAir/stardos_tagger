@@ -321,9 +321,6 @@ class Tagger(PipelineNode):
 		else:
 			self.get_logger().error('skipping attitude tags')
 
-		metadata['Xmp.Camera.FOV'] = '47.5 deg'
-		metadata['Xmp.Camera.FocalLength35efl'] = '16.6 mm'
-
 		# TODO: run through config object for camera parameter names
 
 		metadata.write()
