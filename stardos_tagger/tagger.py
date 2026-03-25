@@ -290,18 +290,17 @@ class Tagger(PipelineNode):
 			metadata['Exif.GPSInfo.GPSLongitudeRef'] = 'W'
 			metadata['Exif.GPSInfo.GPSLongitude'] = self.decimal_to_dms(gps_msg.lon)
 
-			# TODO: make sure this is encoded correctly
-			metadata['Exif.GPSInfo.GPSAltitudeRef'] = '0'
-
-			# relative_alt is AGL
-			# alt is MSL
 			alt = gps_msg.alt
+			relative_alt = gps_msg.relative_alt
 
 			if alt < 0:
 				self.get_logger().warn(f'value out of range, skipping: {alt = }')
 				metadata['Exif.GPSInfo.GPSAltitude'] = Fraction(0)
-			else: 
-				metadata['Exif.GPSInfo.GPSAltitude'] = Fraction(alt, 1000)
+			else:
+				metadata['Exif.GPSInfo.GPSAltitudeRef'] = 0
+				metadata['Exif.GPSInfo.GPSAltitude']    = Fraction(alt, 1000)
+				metadata['Xmp.drone-dji.AbsoluteAltitude'] = f'{alt / 1000:+.3f}'
+				metadata['Xmp.drone-dji.RelativeAltitude'] = f'{relative_alt / 1000:+.3f}'
 
 			# figure out how to get this later
 			# metadata['Exif.GPSInfo.GPSDOP'] = Fraction(0,4294967295)
