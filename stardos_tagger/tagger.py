@@ -31,6 +31,11 @@ class ErrorMask(enum.IntEnum):
 	GPS_QUEUE_EMPTY = 2
 
 
+def _wrap_deg(rad: float) -> float:
+	"""Wrap any angle (radians) to [-180, 180] degrees."""
+	return math.degrees(math.atan2(math.sin(rad), math.cos(rad)))
+
+
 class Tagger(PipelineNode):
 
 	input_topic: str
@@ -241,17 +246,11 @@ class Tagger(PipelineNode):
 		return [Fraction(n).limit_denominator(10000) for n in (degrees, minutes, remainder * 60)]
 
 
-	# main usage of this node: 
+	# main usage of this node:
 	# * tag images with positional metadata we're subscribed to
 	# * tag images with camera parameters passed in via the config
 	def process(self, msg: SensorData):
-<<<<<<< HEAD
 		self.heartbeat_message.state = NodeState.OPERATING
-=======
-		with self.state_mutex:
-			self.heartbeat_message.state = NodeState.PRIMARY
-
->>>>>>> b912669 (use state mutex when setting state)
 		filename = msg.content[0].split('/')[-1]
 
 		#TODO: check if the image actually exists here
