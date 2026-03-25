@@ -250,7 +250,8 @@ class Tagger(PipelineNode):
 	# * tag images with positional metadata we're subscribed to
 	# * tag images with camera parameters passed in via the config
 	def process(self, msg: SensorData):
-		self.heartbeat_message.state = NodeState.OPERATING
+		with self.state_mutex:
+			self.heartbeat_message.state = NodeState.OPERATING
 		filename = msg.content[0].split('/')[-1]
 
 		#TODO: check if the image actually exists here
@@ -309,9 +310,15 @@ class Tagger(PipelineNode):
 		
 		attitude_msg = self.get_attitude(msg.collected_at)
 		if attitude_msg is not None:
-			metadata['Xmp.Camera.Roll'] = attitude_msg.roll
-			metadata['Xmp.Camera.Pitch'] = attitude_msg.pitch
-			metadata['Xmp.Camera.Yaw'] = attitude_msg.yaw
+			r = _wrap_deg(attitude_msg.roll)
+			p = _wrap_deg(attitude_msg.pitch)
+			y = _wrap_deg(attitude_msg.yaw)
+			metadata['Xmp.drone-dji.GimbalRollDegree']  = str(r)
+			metadata['Xmp.drone-dji.GimbalPitchDegree'] = str(p - 90.0)
+			metadata['Xmp.drone-dji.GimbalYawDegree']   = str(y)
+			metadata['Xmp.drone-dji.FlightRollDegree']  = str(r)
+			metadata['Xmp.drone-dji.FlightPitchDegree'] = str(p)
+			metadata['Xmp.drone-dji.FlightYawDegree']   = str(y)
 		else:
 			self.get_logger().error('skipping attitude tags')
 
