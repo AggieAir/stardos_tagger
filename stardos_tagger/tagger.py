@@ -330,10 +330,8 @@ class Tagger(PipelineNode):
 
 def main():
 	# pyexiv2 must register XMP namespaces before using them
-	# attitude metadata is not standardized, so we'll use micasense's format
-	pyexiv2.xmp.register_namespace('http://pix4d.com/camera/1.0/','Camera')
-	# ^^ this is probably outdated. we're moving to Xmp.Camera.Roll / Pitch / Yaw
-	
+	pyexiv2.xmp.register_namespace('http://www.dji.com/drone-dji/1.0/', 'drone-dji')
+
 	rclpy.init()
 	tagger = Tagger()
 
