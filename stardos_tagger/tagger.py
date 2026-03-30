@@ -297,7 +297,7 @@ class Tagger(PipelineNode):
 				self.get_logger().warn(f'value out of range, skipping: {alt = }')
 				metadata['Exif.GPSInfo.GPSAltitude'] = Fraction(0)
 			else:
-				metadata['Exif.GPSInfo.GPSAltitudeRef'] = '0'
+				metadata['Exif.GPSInfo.GPSAltitudeRef'] = Fraction(0)
 				metadata['Exif.GPSInfo.GPSAltitude']    = Fraction(alt, 1000)
 				metadata['Xmp.drone-dji.AbsoluteAltitude'] = f'{alt / 1000:+.3f}'
 				metadata['Xmp.drone-dji.RelativeAltitude'] = f'{relative_alt / 1000:+.3f}'
