@@ -31,6 +31,11 @@ class ErrorMask(enum.IntEnum):
 	GPS_QUEUE_EMPTY = 2
 
 
+def _wrap_deg(rad: float) -> float:
+	"""Wrap any angle (radians) to [-180, 180] degrees."""
+	return math.degrees(math.atan2(math.sin(rad), math.cos(rad)))
+
+
 class Tagger(PipelineNode):
 
 	input_topic: str
@@ -241,17 +246,12 @@ class Tagger(PipelineNode):
 		return [Fraction(n).limit_denominator(10000) for n in (degrees, minutes, remainder * 60)]
 
 
-	# main usage of this node: 
+	# main usage of this node:
 	# * tag images with positional metadata we're subscribed to
 	# * tag images with camera parameters passed in via the config
 	def process(self, msg: SensorData):
-<<<<<<< HEAD
-		self.heartbeat_message.state = NodeState.OPERATING
-=======
 		with self.state_mutex:
-			self.heartbeat_message.state = NodeState.PRIMARY
-
->>>>>>> b912669 (use state mutex when setting state)
+			self.heartbeat_message.state = NodeState.OPERATING
 		filename = msg.content[0].split('/')[-1]
 
 		#TODO: check if the image actually exists here
@@ -290,18 +290,17 @@ class Tagger(PipelineNode):
 			metadata['Exif.GPSInfo.GPSLongitudeRef'] = 'W'
 			metadata['Exif.GPSInfo.GPSLongitude'] = self.decimal_to_dms(gps_msg.lon)
 
-			# TODO: make sure this is encoded correctly
-			metadata['Exif.GPSInfo.GPSAltitudeRef'] = '0'
-
-			# relative_alt is AGL
-			# alt is MSL
 			alt = gps_msg.alt
+			relative_alt = gps_msg.relative_alt
 
 			if alt < 0:
 				self.get_logger().warn(f'value out of range, skipping: {alt = }')
 				metadata['Exif.GPSInfo.GPSAltitude'] = Fraction(0)
-			else: 
-				metadata['Exif.GPSInfo.GPSAltitude'] = Fraction(alt, 1000)
+			else:
+				metadata['Exif.GPSInfo.GPSAltitudeRef'] = Fraction(0)
+				metadata['Exif.GPSInfo.GPSAltitude']    = Fraction(alt, 1000)
+				metadata['Xmp.drone-dji.AbsoluteAltitude'] = f'{alt / 1000:+.3f}'
+				metadata['Xmp.drone-dji.RelativeAltitude'] = f'{relative_alt / 1000:+.3f}'
 
 			# figure out how to get this later
 			# metadata['Exif.GPSInfo.GPSDOP'] = Fraction(0,4294967295)
@@ -310,14 +309,17 @@ class Tagger(PipelineNode):
 		
 		attitude_msg = self.get_attitude(msg.collected_at)
 		if attitude_msg is not None:
-			metadata['Xmp.Camera.Roll'] = attitude_msg.roll
-			metadata['Xmp.Camera.Pitch'] = attitude_msg.pitch
-			metadata['Xmp.Camera.Yaw'] = attitude_msg.yaw
+			r = _wrap_deg(attitude_msg.roll)
+			p = _wrap_deg(attitude_msg.pitch)
+			y = _wrap_deg(attitude_msg.yaw)
+			metadata['Xmp.drone-dji.GimbalRollDegree']  = str(r)
+			metadata['Xmp.drone-dji.GimbalPitchDegree'] = str(p - 90.0)
+			metadata['Xmp.drone-dji.GimbalYawDegree']   = str(y)
+			metadata['Xmp.drone-dji.FlightRollDegree']  = str(r)
+			metadata['Xmp.drone-dji.FlightPitchDegree'] = str(p)
+			metadata['Xmp.drone-dji.FlightYawDegree']   = str(y)
 		else:
 			self.get_logger().error('skipping attitude tags')
-
-		metadata['Xmp.Camera.FOV'] = '47.5 deg'
-		metadata['Xmp.Camera.FocalLength35efl'] = '16.6 mm'
 
 		# TODO: run through config object for camera parameter names
 
@@ -331,10 +333,8 @@ class Tagger(PipelineNode):
 
 def main():
 	# pyexiv2 must register XMP namespaces before using them
-	# attitude metadata is not standardized, so we'll use micasense's format
-	pyexiv2.xmp.register_namespace('http://pix4d.com/camera/1.0/','Camera')
-	# ^^ this is probably outdated. we're moving to Xmp.Camera.Roll / Pitch / Yaw
-	
+	pyexiv2.xmp.register_namespace('http://www.dji.com/drone-dji/1.0/', 'drone-dji')
+
 	rclpy.init()
 	tagger = Tagger()
 
