@@ -291,12 +291,15 @@ class Tagger(PipelineNode):
 			# relative_alt is AGL
 			# alt is MSL
 			alt = gps_msg.alt
+			relative_alt = gps_msg.relative_alt
 
 			if alt < 0:
 				self.get_logger().warn(f'value out of range, skipping: {alt = }')
 				metadata['Exif.GPSInfo.GPSAltitude'] = Fraction(0)
-			else: 
+			else:
 				metadata['Exif.GPSInfo.GPSAltitude'] = Fraction(alt, 1000)
+
+			metadata['Xmp.Camera.RelativeAltitude'] = str(relative_alt / 1000)
 
 			# figure out how to get this later
 			# metadata['Exif.GPSInfo.GPSDOP'] = Fraction(0,4294967295)
@@ -305,9 +308,9 @@ class Tagger(PipelineNode):
 		
 		attitude_msg = self.get_attitude(msg.collected_at)
 		if attitude_msg is not None:
-			metadata['Xmp.Camera.Roll'] = attitude_msg.roll
-			metadata['Xmp.Camera.Pitch'] = attitude_msg.pitch
-			metadata['Xmp.Camera.Yaw'] = attitude_msg.yaw
+			metadata['Xmp.Camera.Roll'] = math.atan2(math.sin(attitude_msg.roll), math.cos(attitude_msg.roll))
+			metadata['Xmp.Camera.Pitch'] = math.atan2(math.sin(attitude_msg.pitch), math.cos(attitude_msg.pitch))
+			metadata['Xmp.Camera.Yaw'] = math.atan2(math.sin(attitude_msg.yaw), math.cos(attitude_msg.yaw))
 		else:
 			self.get_logger().error('skipping attitude tags')
 
