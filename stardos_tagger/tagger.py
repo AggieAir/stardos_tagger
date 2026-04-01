@@ -245,13 +245,8 @@ class Tagger(PipelineNode):
 	# * tag images with positional metadata we're subscribed to
 	# * tag images with camera parameters passed in via the config
 	def process(self, msg: SensorData):
-<<<<<<< HEAD
-		self.heartbeat_message.state = NodeState.OPERATING
-=======
 		with self.state_mutex:
-			self.heartbeat_message.state = NodeState.PRIMARY
-
->>>>>>> b912669 (use state mutex when setting state)
+			self.heartbeat_message.state = NodeState.OPERATING
 		filename = msg.content[0].split('/')[-1]
 
 		#TODO: check if the image actually exists here
