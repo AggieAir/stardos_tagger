@@ -304,7 +304,6 @@ class Tagger(PipelineNode):
 				metadata['Xmp.drone-dji.AbsoluteAltitude'] = f'{alt / 1000:+.3f}'
 				metadata['Xmp.drone-dji.RelativeAltitude'] = f'{relative_alt / 1000:+.3f}'
 
-			metadata['Xmp.Camera.RelativeAltitude'] = str(relative_alt / 1000)
 
 			# figure out how to get this later
 			# metadata['Exif.GPSInfo.GPSDOP'] = Fraction(0,4294967295)
