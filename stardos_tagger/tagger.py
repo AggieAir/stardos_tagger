@@ -246,7 +246,7 @@ class Tagger(PipelineNode):
 	# * tag images with camera parameters passed in via the config
 	def process(self, msg: SensorData):
 		with self.state_mutex:
-			self.heartbeat_message.state = NodeState.PRIMARY
+			self.heartbeat_message.state = NodeState.OPERATING
 
 		filename = msg.content[0].split('/')[-1]
 
